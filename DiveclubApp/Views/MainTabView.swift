@@ -13,7 +13,7 @@ struct MainTabView: View {
     
     var body: some View {
         TabView {
-            
+
             // MARK: Events
             NavigationStack {
                 EventsView()

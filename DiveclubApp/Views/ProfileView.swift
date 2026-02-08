@@ -95,7 +95,7 @@ extension ProfileView {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            if member.instructor {
+            if member.isInstructor {
                 instructorBadge
             }
         }

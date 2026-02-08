@@ -30,8 +30,15 @@ final class InstructorViewModel: ObservableObject {
     
     func load() async {
         do {
+            print("Is Instructor:",
+                  AuthManager.shared.currentMember?.isInstructor ?? false)
+
             students = try await APIClient.shared.request("progress/instructor")
+            
+            print("Loaded enrollments:", students.count)
+
         } catch {
+            print("Instructor load error:", error)
             errorMessage = error.localizedDescription
         }
     }
