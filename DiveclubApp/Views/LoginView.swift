@@ -30,11 +30,10 @@ struct LoginView: View {
             
             Button("Login") {
                 Task {
-                    do {
-                        try await auth.login(username: username, password: password)
-                    } catch {
-                        errorMessage = "Login fehlgeschlagen"
-                    }
+                    await AuthManager.shared.login(
+                        username: username,
+                        password: password
+                    )
                 }
             }
             .buttonStyle(.borderedProminent)

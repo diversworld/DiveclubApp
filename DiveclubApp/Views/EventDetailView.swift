@@ -13,62 +13,120 @@ struct EventDetailView: View {
     @StateObject private var vm = EventDetailViewModel()
     
     var body: some View {
-        ZStack {
+        NavigationStack {
             
-            if vm.isLoading {
-                ProgressView()
-                
-            } else if let event = vm.event {
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        
-                        Text(event.title)
-                            .font(.largeTitle)
-                            .bold()
-                        
-                        Text("Start: \(event.formattedStartDate)")
-                        
-                        if let location = event.location {
-                            Label(location, systemImage: "mappin.and.ellipse")
-                        }
-                        
-                        if let price = event.price {
-                            Label("\(price) €", systemImage: "eurosign.circle")
-                        }
-                        
-                        Button {
-                            Task {
-                                do {
-                                    try await vm.createReservation(for: eventId)
-                                    print("Reservierung erfolgreich")
-                                } catch {
-                                    print("Fehler bei Reservierung:", error)
-                                }
-                            }
-                        } label: {
-                            if vm.isSubmitting {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                            } else {
-                                Label("Jetzt buchen", systemImage: "checkmark.circle.fill")
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .padding(.top)
-                        .disabled(vm.isSubmitting)
-                    }
-                    .padding()
+            Group {
+                if vm.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 
-            } else if let error = vm.errorMessage {
-                Text("Fehler: \(error)")
+                else if let event = vm.event {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            
+                            // MARK: Titel
+                            Text(event.title)
+                                .font(.largeTitle)
+                                .bold()
+                            
+                            // MARK: Datum
+                            Text("Start: \(event.formattedStartDate)")
+                            
+                            // MARK: Ort
+                            if let location = event.location {
+                                Label(location, systemImage: "mappin.and.ellipse")
+                            }
+                            
+                            // MARK: Preis
+                            if let price = event.price {
+                                Label("\(price) €", systemImage: "eurosign.circle")
+                            }
+                            
+                            Divider()
+                            
+                            // MARK: Teilnehmeranzeige
+                            if let current = event.currentParticipants,
+                               let max = event.maxParticipants {
+                                
+                                HStack {
+                                    Text("Teilnehmer")
+                                    Spacer()
+                                    Text("\(current) / \(max)")
+                                        .bold()
+                                        .foregroundStyle(
+                                            current >= max ? .red : .primary
+                                        )
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // MARK: - Anmeldung / Status
+
+                            if vm.isAlreadyBooked {
+                                
+                                Label("Bereits angemeldet",
+                                      systemImage: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top)
+                                
+                            } else {
+                                
+                                Button {
+                                    Task {
+                                        await vm.enroll()
+                                    }
+                                } label: {
+                                    
+                                    if vm.isSubmitting {
+                                        ProgressView()
+                                            .frame(maxWidth: .infinity)
+                                    } else {
+                                        Text(vm.isFull ? "Zur Warteliste" : "Jetzt anmelden")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(vm.isSubmitting)
+                                .padding(.top)
+                            }
+                            
+                            // MARK: Fehler
+                            if let error = vm.errorMessage {
+                                Text(error)
+                                    .foregroundColor(.red)
+                                    .font(.footnote)
+                            }
+                        }
+                        .padding()
+                    }
+                }
+                
+                else if let error = vm.errorMessage {
+                    Text("Fehler: \(error)")
+                }
             }
-        }
-        .navigationTitle("Details")
-        .task {
-            await vm.loadEvent(id: eventId)
+            .navigationTitle("Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await vm.loadEvent(id: eventId)
+            }
+            .overlay(alignment: .top) {
+                if vm.bookingSuccess {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Erfolgreich angemeldet")
+                    }
+                    .padding()
+                    .background(.green)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding()
+                    .transition(.move(edge: .top))
+                }
+            }
         }
     }
 }

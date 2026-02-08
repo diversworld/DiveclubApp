@@ -73,10 +73,19 @@ final class APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
 
-        let (_, response) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        print("STATUS CODE:", httpResponse.statusCode)
+
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("SERVER RESPONSE:", jsonString)
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
         }
     }

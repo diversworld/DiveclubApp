@@ -9,40 +9,41 @@ import Foundation
 import Combine
 
 @MainActor
-class AuthManager: ObservableObject {
+final class AuthManager: ObservableObject {
     
     static let shared = AuthManager()
-
-    @Published var memberId: Int?
+    
     @Published var isAuthenticated = false
-    @Published var isCheckingSession = true
+    @Published var currentMember: Member?
+    @Published var isCheckingSession = false
     
     private init() {}
     
-    func login(username: String, password: String) async throws {
-        
-        let requestModel = LoginRequest(
-            username: username,
-            password: password
-        )
-        
-        let body = try JSONEncoder().encode(requestModel)
-        
-        let response: LoginResponse = try await APIClient.shared.request(
-            "login",
-            method: "POST",
-            body: body
-        )
-        
-        guard response.success else {
-            throw URLError(.userAuthenticationRequired)
+    // MARK: - Login
+    
+    func login(username: String, password: String) async {
+        do {
+            let response: LoginResponse =
+                try await APIClient.shared.request(
+                    "login",
+                    method: "POST",
+                    body: try JSONEncoder().encode(
+                        LoginRequest(username: username, password: password)
+                    )
+                )
+            
+            currentMember = response.member
+            isAuthenticated = true
+            
+            await EnrollmentStore.shared.load()
+            
+        } catch {
+            isAuthenticated = false
+            currentMember = nil
         }
-        
-        UserDefaults.standard.set(response.member.id, forKey: "memberId")
-        
-        memberId = response.member.id
-        isAuthenticated = true
     }
+    
+    // MARK: - Logout
     
     func logout() async {
         do {
@@ -51,30 +52,29 @@ class AuthManager: ObservableObject {
                 method: "POST",
                 body: nil
             )
-        } catch {
-            print("Logout request failed:", error)
-        }
+        } catch {}
         
-        UserDefaults.standard.removeObject(forKey: "memberId")
-        
-        if let cookies = HTTPCookieStorage.shared.cookies {
-            for cookie in cookies {
-                HTTPCookieStorage.shared.deleteCookie(cookie)
-            }
-        }
-        
-        memberId = nil
+        currentMember = nil
         isAuthenticated = false
     }
+    
+    // MARK: - Session Check
     
     func checkSession() async {
         isCheckingSession = true
         
         do {
-            _ = try await APIClient.shared.request("me") as Member
+            let member: Member =
+                try await APIClient.shared.request("me")
+            
+            currentMember = member
             isAuthenticated = true
+            
+            await EnrollmentStore.shared.load()
+            
         } catch {
             isAuthenticated = false
+            currentMember = nil
         }
         
         isCheckingSession = false

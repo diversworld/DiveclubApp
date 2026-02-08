@@ -10,19 +10,25 @@ import Combine
 
 @MainActor
 final class EventsViewModel: ObservableObject {
-
+    
     @Published var events: [Event] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-
-    func loadEvents() async {
+    
+    func load() async {
         isLoading = true
-        defer { isLoading = false }
-
+        errorMessage = nil
+        
         do {
-            events = try await APIClient.shared.request("events")
+            let loadedEvents: [Event] =
+                try await APIClient.shared.request("events")
+            
+            self.events = loadedEvents
+            
         } catch {
             errorMessage = error.localizedDescription
         }
+        
+        isLoading = false
     }
 }

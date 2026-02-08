@@ -8,7 +8,5 @@
 import Foundation
 
 struct ReservationRequest: Codable {
-    let assetType: String?
-    let items: [Int]
-    let reservedFor: String?
+    let eventId: Int
 }

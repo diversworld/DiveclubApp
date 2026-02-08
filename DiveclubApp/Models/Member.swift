@@ -20,9 +20,13 @@ struct Member: Codable, Identifiable {
     let phone: String?
     let mobile: String?
     let dateOfBirth: TimeInterval?
+    let isInstructor: Bool?
+    
+    // MARK: - Computed
     
     var fullName: String {
         "\(firstname ?? "") \(lastname ?? "")"
+            .trimmingCharacters(in: .whitespaces)
     }
     
     var birthDate: Date? {
@@ -30,19 +34,19 @@ struct Member: Codable, Identifiable {
         return Date(timeIntervalSince1970: dateOfBirth)
     }
     
-    var formattedBirthDate: String {
-        guard let birthDate else { return "-" }
-        
+    var formattedBirthDate: String? {
+        guard let birthDate else { return nil }
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        formatter.timeStyle = .none
         return formatter.string(from: birthDate)
     }
-}
-
-// MARK: - Custom Decoding
-
-extension Member {
+    
+    var instructor: Bool {
+        isInstructor ?? false
+    }
+    
+    // MARK: - Coding
+    
     enum CodingKeys: String, CodingKey {
         case id
         case username
@@ -55,6 +59,7 @@ extension Member {
         case phone
         case mobile
         case dateOfBirth
+        case isInstructor
     }
     
     init(from decoder: Decoder) throws {
@@ -71,17 +76,16 @@ extension Member {
         phone = try container.decodeIfPresent(String.self, forKey: .phone)
         mobile = try container.decodeIfPresent(String.self, forKey: .mobile)
         
-        // 👇 Hier kommt die robuste Lösung
-        
-        if let doubleValue = try? container.decode(TimeInterval.self, forKey: .dateOfBirth) {
-            dateOfBirth = doubleValue
-        }
-        else if let stringValue = try? container.decode(String.self, forKey: .dateOfBirth),
-                let doubleFromString = TimeInterval(stringValue) {
-            dateOfBirth = doubleFromString
-        }
-        else {
+        // 🔥 DATE SAFE DECODING (String oder Int)
+        if let timestamp = try? container.decode(TimeInterval.self, forKey: .dateOfBirth) {
+            dateOfBirth = timestamp
+        } else if let string = try? container.decode(String.self, forKey: .dateOfBirth),
+                  let timestamp = TimeInterval(string) {
+            dateOfBirth = timestamp
+        } else {
             dateOfBirth = nil
         }
+        
+        isInstructor = try container.decodeIfPresent(Bool.self, forKey: .isInstructor)
     }
 }

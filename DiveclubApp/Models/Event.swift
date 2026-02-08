@@ -7,35 +7,23 @@
 
 import Foundation
 
-struct Event: Identifiable, Codable {
+struct Event: Codable, Identifiable {
+    
     let id: Int
-    let published: Bool
     let title: String
-    let courseId: Int
     let dateStart: TimeInterval
     let dateEnd: TimeInterval?
-    let instructor: Int?
-    let maxParticipants: Int?
-    let price: String?
-    let description: String?
     let location: String?
-}
-
-extension Event {
-    
-    var startDate: Date {
-        Date(timeIntervalSince1970: dateStart)
-    }
-    
-    var endDate: Date? {
-        guard let dateEnd else { return nil }
-        return Date(timeIntervalSince1970: dateEnd)
-    }
+    let price: String?
+    let courseId: Int?
+    let maxParticipants: Int?
+    let currentParticipants: Int?
     
     var formattedStartDate: String {
+        let date = Date(timeIntervalSince1970: dateStart)
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
-        return formatter.string(from: startDate)
+        return formatter.string(from: date)
     }
 }

@@ -9,83 +9,63 @@ import SwiftUI
 
 struct ChangePasswordView: View {
     
-    @Environment(\.dismiss) var dismiss
-    @StateObject private var vm = ProfileViewModel()
+    @ObservedObject var vm: ProfileViewModel
     
     @State private var currentPassword = ""
     @State private var newPassword = ""
     @State private var confirmPassword = ""
     
-    @State private var authFailed = false
-    
-    var strength: PasswordStrength {
-        PasswordValidator.evaluate(newPassword)
-    }
-    
     var body: some View {
         Form {
             
             Section("Aktuelles Passwort") {
-                PasswordField(
-                    title: "Aktuelles Passwort",
-                    text: $currentPassword
-                )
+                SecureField("Aktuelles Passwort", text: $currentPassword)
             }
             
             Section("Neues Passwort") {
-                PasswordField(
-                    title: "Neues Passwort",
-                    text: $newPassword
-                )
-                
-                PasswordStrengthView(password: newPassword)
+                SecureField("Neues Passwort", text: $newPassword)
+                SecureField("Passwort bestätigen", text: $confirmPassword)
             }
             
-            Section("Bestätigung") {
-                PasswordField(
-                    title: "Passwort bestätigen",
-                    text: $confirmPassword
-                )
-            }
-            
-            Section {
-                Button("Passwort ändern") {
-                    Task {
-                        await secureChangePassword()
-                    }
+            Button {
+                Task {
+                    await vm.changePassword(
+                        current: currentPassword,
+                        new: newPassword
+                    )
                 }
-                .disabled(!isValid)
-                .buttonStyle(.borderedProminent)
+            } label: {
+                if vm.isSaving {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Text("Passwort ändern")
+                        .frame(maxWidth: .infinity)
+                }
             }
+            .disabled(!canSubmit)
         }
         .navigationTitle("Passwort ändern")
-        .alert("Authentifizierung fehlgeschlagen",
-               isPresented: $authFailed) {
-            Button("OK", role: .cancel) { }
+        .overlay(alignment: .top) {
+            if vm.saveSuccess {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Passwort erfolgreich geändert")
+                }
+                .padding()
+                .background(.green)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding()
+                .transition(.move(edge: .top))
+            }
         }
     }
     
-    var isValid: Bool {
+    private var canSubmit: Bool {
+        !currentPassword.isEmpty &&
+        !newPassword.isEmpty &&
         newPassword == confirmPassword &&
-        strength.rawValue >= 2
-    }
-    
-    private func secureChangePassword() async {
-        
-        //let success = await BiometricAuth.authenticate(
-        //    reason: "Bestätige die Passwortänderung mit Face ID"
-        //)
-        
-        //if success {
-            await vm.changePassword(
-                current: currentPassword,
-                new: newPassword
-            )
-            dismiss()
-        //} else {
-        //    authFailed = true
-        //}
+        newPassword.count >= 8
     }
 }
-
-

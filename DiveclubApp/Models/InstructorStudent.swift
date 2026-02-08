@@ -1,25 +1,26 @@
 //
-//  Student.swift
+//  InstructorStudent.swift
 //  DiveclubApp
 //
-//  Created by Eckhard Becker on 07.02.26.
+//  Created by Eckhard Becker on 08.02.26.
 //
 
 import Foundation
 
-struct Student: Codable, Identifiable {
+struct InstructorStudent: Codable, Identifiable {
     
     let id: Int
     let firstname: String?
     let lastname: String?
     let email: String?
-    let progress: Double?
+    let progress: Int?
     
     var fullName: String {
         "\(firstname ?? "") \(lastname ?? "")"
+            .trimmingCharacters(in: .whitespaces)
     }
     
     var progressValue: Double {
-        progress ?? 0.0
+        Double(progress ?? 0) / 100.0
     }
 }

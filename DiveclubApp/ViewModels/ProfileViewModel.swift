@@ -9,21 +9,25 @@ import Foundation
 import Combine
 
 @MainActor
-class ProfileViewModel: ObservableObject {
+final class ProfileViewModel: ObservableObject {
     
     @Published var member: Member?
     @Published var isLoading = false
+    @Published var isSaving = false
     @Published var errorMessage: String?
-    @Published var showSuccess = false
-    @Published var showBanner = false
-    @Published var bannerMessage = ""
+    @Published var saveSuccess = false
+    
+    // MARK: Load
     
     func load() async {
         isLoading = true
         errorMessage = nil
         
         do {
-            member = try await APIClient.shared.request("me")
+            let result: Member =
+                try await APIClient.shared.request("me")
+            
+            member = result
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -31,37 +35,43 @@ class ProfileViewModel: ObservableObject {
         isLoading = false
     }
     
-    func updateProfile(
-        firstname: String,
-        lastname: String,
-        email: String,
-        street: String,
-        postal: String,
-        city: String,
-        phone: String,
-        mobile: String,
-        dateOfBirth: TimeInterval
-    ) async {
+    // MARK: Save
+    
+    func save(firstname: String,
+              lastname: String,
+              email: String,
+              street: String,
+              postal: String,
+              city: String,
+              phone: String,
+              mobile: String,
+              dateOfBirth: Date?) async {
         
-        isLoading = true
+        guard !isSaving else { return }
+        
+        isSaving = true
         errorMessage = nil
-        showBanner = true
-        bannerMessage = "Profil erfolgreich gespeichert"
+        saveSuccess = false
         
-        let request = UpdateProfileRequest(
-            firstname: firstname,
-            lastname: lastname,
-            email: email,
-            street: street,
-            postal: postal,
-            city: city,
-            phone: phone,
-            mobile: mobile,
-            dateOfBirth: dateOfBirth
-        )
+        defer { isSaving = false }
         
         do {
-            let body = try JSONEncoder().encode(request)
+            var payload: [String: Any] = [
+                "firstname": firstname,
+                "lastname": lastname,
+                "email": email,
+                "street": street,
+                "postal": postal,
+                "city": city,
+                "phone": phone,
+                "mobile": mobile
+            ]
+            
+            if let date = dateOfBirth {
+                payload["dateOfBirth"] = Int(date.timeIntervalSince1970)
+            }
+            
+            let body = try JSONSerialization.data(withJSONObject: payload)
             
             try await APIClient.shared.requestWithoutResponse(
                 "me",
@@ -69,26 +79,33 @@ class ProfileViewModel: ObservableObject {
                 body: body
             )
             
-            showSuccess = true   // 👈 Erfolg setzen
-            
-            await load()         // neu laden
+            await load()
+            saveSuccess = true
             
         } catch {
             errorMessage = error.localizedDescription
         }
-        
-        isLoading = false
     }
     
+    // MARK: - Passwort ändern
+
     func changePassword(current: String, new: String) async {
         
-        let request = ChangePasswordRequest(
-            currentPassword: current,
-            newPassword: new
-        )
+        guard !isSaving else { return }
+        
+        isSaving = true
+        errorMessage = nil
+        saveSuccess = false
+        
+        defer { isSaving = false }
         
         do {
-            let body = try JSONEncoder().encode(request)
+            let payload = [
+                "currentPassword": current,
+                "newPassword": new
+            ]
+            
+            let body = try JSONSerialization.data(withJSONObject: payload)
             
             try await APIClient.shared.requestWithoutResponse(
                 "me/password",
@@ -96,11 +113,10 @@ class ProfileViewModel: ObservableObject {
                 body: body
             )
             
-            bannerMessage = "Passwort erfolgreich geändert"
-            showBanner = true
+            saveSuccess = true
             
         } catch {
-            errorMessage = "Passwortänderung fehlgeschlagen"
+            errorMessage = error.localizedDescription
         }
     }
 }
