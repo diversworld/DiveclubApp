@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct ChangePasswordRequest: Codable {
     let currentPassword: String

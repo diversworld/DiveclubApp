@@ -6,48 +6,55 @@
 //
 
 import SwiftUI
+import Combine
 
 struct EventsView: View {
-    
     @StateObject private var vm = EventsViewModel()
-    
+
     var body: some View {
-        NavigationStack {
-            
-            Group {
-                if vm.isLoading {
-                    ProgressView()
+        List {
+            if vm.isLoading {
+                ProgressView("Lade Events …")
+            }
+            if let err = vm.error {
+                Text(err).foregroundStyle(.red)
+            }
+
+            // Deine bestehenden Events
+            Section("Events") {
+                ForEach(vm.events) { e in
+                    Text(e.title)
                 }
-                
-                else if let error = vm.errorMessage {
-                    Text(error)
-                        .foregroundColor(.red)
-                }
-                
-                else {
-                    List(vm.events) { event in
+            }
+
+            // TÜV Section aus Tank-Checks
+            Section("TÜV (geplante Prüfungen)") {
+                if vm.tankChecks.isEmpty && !vm.isLoading {
+                    Text("Aktuell kein TÜV-Termin geplant.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(vm.tankChecks) { p in
                         NavigationLink {
-                            EventDetailView(eventId: event.id)
+                            TankCheckDetailView(proposalId: p.id)
                         } label: {
-                            VStack(alignment: .leading) {
-                                Text(event.title)
-                                    .font(.headline)
-                                
-                                Text(event.formattedStartDate)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(p.title ?? "TÜV-Prüfung").font(.headline)
+                                if let d = p.proposalDate {
+                                    Text(d, style: .date)
+                                } else {
+                                    Text("Datum folgt").foregroundStyle(.secondary)
+                                }
+                                if let vendor = p.vendorName, !vendor.isEmpty {
+                                    Text(vendor).font(.footnote).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
-                    .refreshable {
-                        await vm.load()
-                    }
                 }
             }
-            .navigationTitle("Events")
-            .task {
-                await vm.load()
-            }
         }
+        .navigationTitle("Events")
+        .task { await vm.load() }
+        .refreshable { await vm.load() }
     }
 }

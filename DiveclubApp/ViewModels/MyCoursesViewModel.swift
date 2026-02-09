@@ -25,26 +25,14 @@ final class MyCoursesViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let result: [StudentEnrollmentProgress] = try await APIClient.shared.request("progress")
+            let result: [StudentEnrollmentProgress] = try await APIClient.shared.request("/progress")
             enrollments = result
         } catch {
-            enrollments = []
-
-            // ✅ Backend liefert: HTTP 404: no student profile found
-            if let net = error as? NetworkError {
-                switch net {
-                case .httpStatus(let code, let body):
-                    if code == 404,
-                       (body?.lowercased().contains("no student profile found") == true) {
-                        isNotAStudentProfile = true
-                        return
-                    }
-                default:
-                    break
-                }
+            if case APIError.badStatus(let code, _) = error, code == 401 {
+                self.errorMessage = "Bitte neu einloggen."
+            } else {
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
-
-            errorMessage = error.localizedDescription
         }
     }
 }

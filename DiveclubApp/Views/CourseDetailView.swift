@@ -37,10 +37,10 @@ struct CourseDetailView: View {
             }
 
             switch tab {
-            case .progress:
-                progressSection
             case .schedule:
                 scheduleSection
+            case .progress:
+                progressSection
             }
         }
         .navigationTitle("Kursdetails")
@@ -61,7 +61,6 @@ struct CourseDetailView: View {
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 8) {
 
-            // Kurs-Titel aus /api/progress.course
             Text(vm.enrollment.course.title.decodedEntities)
                 .font(.headline)
 
@@ -81,7 +80,6 @@ struct CourseDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // ✅ dateStart/dateEnd sind jetzt Date? (kein Int mehr)
                 if let start = ev.dateStart {
                     Text("Beginn: \(Self.formatDateTime(start))")
                         .font(.footnote)
@@ -101,11 +99,10 @@ struct CourseDetailView: View {
                 }
             }
 
-            // Kursbeschreibung aus /api/progress.course.description
             if let desc = vm.enrollment.course.description, !desc.isEmpty {
-                Text(desc.decodedEntities)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                HTMLTextView(html: desc, textStyle: .footnote)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 2)
             }
 
             ProgressView(value: vm.enrollment.progressValue)
@@ -133,12 +130,12 @@ struct CourseDetailView: View {
 
                             Spacer()
 
-                            // dateCompleted ist bei dir aktuell Int? (Unix Timestamp) im StudentExercise
                             if let ts = ex.dateCompleted {
                                 Text(Self.formatDate(ts))
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .font(.footnote)
                     }
                     .padding(.vertical, 4)
                 }
@@ -160,32 +157,42 @@ struct CourseDetailView: View {
                     ProgressView()
                     Text("Lade Plan …").foregroundStyle(.secondary)
                 }
+
             } else if let err = vm.scheduleError {
                 Text(err).foregroundStyle(.red)
+
             } else if vm.schedule.isEmpty {
                 Text("Kein Terminplan vorhanden.")
                     .foregroundStyle(.secondary)
+
             } else {
                 ForEach(vm.schedule) { item in
                     VStack(alignment: .leading, spacing: 6) {
 
-                        Text((item.title ?? "Termin").decodedEntities)
+                        // ✅ Modul-Titel
+                        Text(item.moduleTitle.decodedEntities)
                             .font(.headline)
 
-                        // ✅ startDate ist bei deinem Schedule sehr wahrscheinlich Date? (falls du es so modelliert hast)
-                        if let start = item.startDate {
-                            Text(Self.formatDateTime(start))
-                                .foregroundStyle(.secondary)
-                        }
+                        HStack(alignment: .firstTextBaseline) {
+                            // ✅ Location
+                            if let loc = item.location, !loc.isEmpty {
+                                Text(loc.decodedEntities)
+                                    .foregroundStyle(.secondary)
+                            }
 
-                        if let loc = item.location, !loc.isEmpty {
-                            Text(loc.decodedEntities)
+                            Spacer()
+
+                            // ✅ Datum (immer vorhanden)
+                            Text(Self.formatDateTime(item.plannedAt))
                                 .foregroundStyle(.secondary)
                         }
+                        .font(.footnote)
 
                         if let notes = item.notes, !notes.isEmpty {
-                            Text(notes.decodedEntities)
+                            Text(notes.htmlToPlainText)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     .padding(.vertical, 4)
@@ -196,29 +203,22 @@ struct CourseDetailView: View {
 
     // MARK: - Date formatting
 
-    /// Für Unix Timestamp (Sekunden)
     private static func formatDate(_ unix: Int) -> String {
         let d = Date(timeIntervalSince1970: TimeInterval(unix))
         return formatDate(d)
     }
 
-    /// Für Date
     private static func formatDate(_ date: Date) -> String {
         let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE")
         f.dateStyle = .medium
         f.timeStyle = .none
         return f.string(from: date)
     }
 
-    /// Für Unix Timestamp (Sekunden)
-    private static func formatDateTime(_ unix: Int) -> String {
-        let d = Date(timeIntervalSince1970: TimeInterval(unix))
-        return formatDateTime(d)
-    }
-
-    /// ✅ Für Date (wichtig für EventDetail.dateStart/dateEnd und Schedule.startDate)
     private static func formatDateTime(_ date: Date) -> String {
         let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE")
         f.dateStyle = .medium
         f.timeStyle = .short
         return f.string(from: date)

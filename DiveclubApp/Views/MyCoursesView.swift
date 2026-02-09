@@ -58,7 +58,7 @@ struct MyCoursesView: View {
                                 ProgressView(value: e.progressValue)
 
                                 if let desc = e.course.description, !desc.isEmpty {
-                                    Text(desc.decodedEntities)
+                                    Text(desc.htmlToPlainText)
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)

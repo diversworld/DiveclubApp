@@ -10,51 +10,27 @@ import Combine
 
 @MainActor
 final class InstructorDashboardViewModel: ObservableObject {
-    
-    @Published var enrollments: [InstructorEnrollment] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    
-    private var timer: AnyCancellable?
-    
-    func load() async {
-        isLoading = true
-        defer { isLoading = false }
-        
+    @Published var error: String?
+    @Published var isBusy: Bool = false
+
+    func approveEnrollment(enrollmentId: Int) async {
+        await patchEnrollment(path: "/instructor/approve/\(enrollmentId)")
+    }
+
+    func rejectEnrollment(enrollmentId: Int) async {
+        await patchEnrollment(path: "/instructor/reject/\(enrollmentId)")
+    }
+
+    private func patchEnrollment(path: String) async {
+        isBusy = true
+        error = nil
+        defer { isBusy = false }
+
         do {
-            enrollments = try await APIClient.shared.request("progress/instructor")
+            // KEIN body -> vermeidet "Generic parameter B could not be inferred"
+            try await APIClient.shared.requestWithoutResponse(path, method: "PATCH")
         } catch {
-            errorMessage = error.localizedDescription
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-    }
-    
-    func startAutoRefresh() {
-        timer = Timer.publish(every: 10, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                Task { await self?.load() }
-            }
-    }
-    
-    func stopAutoRefresh() {
-        timer?.cancel()
-    }
-    
-    func approve(_ enrollment: InstructorEnrollment) async {
-        try? await APIClient.shared.requestWithoutResponse(
-            "instructor/approve/\(enrollment.id)",
-            method: "PATCH",
-            body: nil
-        )
-        await load()
-    }
-    
-    func reject(_ enrollment: InstructorEnrollment) async {
-        try? await APIClient.shared.requestWithoutResponse(
-            "instructor/reject/\(enrollment.id)",
-            method: "PATCH",
-            body: nil
-        )
-        await load()
     }
 }

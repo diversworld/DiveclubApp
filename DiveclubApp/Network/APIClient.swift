@@ -7,27 +7,20 @@
 
 import Foundation
 
-enum NetworkError: LocalizedError {
+enum APIError: Error, LocalizedError {
     case invalidURL
-    case invalidResponse
-    case httpStatus(Int, body: String?)
-    case emptyResponse
-    case decoding(String)
+    case badStatus(Int, String?)
+    case decoding(Error)
+    case encoding(Error)
+    case transport(Error)
 
     var errorDescription: String? {
         switch self {
         case .invalidURL: return "Ungültige URL."
-        case .invalidResponse: return "Ungültige Server-Antwort."
-        case .httpStatus(let code, let body):
-            if let body, !body.isEmpty {
-                return "HTTP \(code): \(body)"
-            } else {
-                return "HTTP \(code)"
-            }
-        case .emptyResponse:
-            return "Server hat keine Daten geliefert (leere Antwort)."
-        case .decoding(let msg):
-            return "Decoding-Fehler: \(msg)"
+        case .badStatus(let code, let body): return "Serverfehler (\(code)). \(body ?? "")"
+        case .decoding(let e): return "Antwort konnte nicht gelesen werden: \(e.localizedDescription)"
+        case .encoding(let e): return "Request konnte nicht erstellt werden: \(e.localizedDescription)"
+        case .transport(let e): return "Netzwerkfehler: \(e.localizedDescription)"
         }
     }
 }
@@ -35,147 +28,199 @@ enum NetworkError: LocalizedError {
 final class APIClient {
     static let shared = APIClient()
 
-    // ✅ anpassen
-    private var baseURL: URL {
-        let raw = AppSettingsManager.shared.baseURL
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Base URL eurer Site (z.B. https://contao56.ddev.site)
+    var baseURL: URL = URL(string: "https://contao56.ddev.site")!
 
-        // Falls User "…/api" ohne Slash speichert, korrigieren wir das hier robust:
-        var normalized = raw
-        if !normalized.hasSuffix("/") { normalized += "/" }
+    private let session: URLSession
+    private let decoder = JSONDecoder()
+    private let encoder = JSONEncoder()
 
-        return URL(string: normalized)!
+    private init() {
+        let config = URLSessionConfiguration.default
+        config.httpCookieAcceptPolicy = .always
+        config.httpShouldSetCookies = true
+        config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 30
+
+        self.session = URLSession(configuration: config)
     }
 
-    private init() {}
+    // MARK: - URL + Request
 
-    func request<T: Decodable>(
-        _ path: String,
-        method: String = "GET",
-        body: Data? = nil
-    ) async throws -> T {
-
-        guard let url = URL(string: path, relativeTo: baseURL) else {
-            throw NetworkError.invalidURL
+    private func makeURL(_ path: String) throws -> URL {
+        let normalized = normalize(path)
+        guard let url = URL(string: "/api" + normalized, relativeTo: baseURL) else {
+            throw APIError.invalidURL
         }
+        return url
+    }
 
+    private func makeRequest(method: String, path: String, body: Data? = nil) throws -> URLRequest {
+        let url = try makeURL(path)
         var req = URLRequest(url: url)
         req.httpMethod = method
-
-        // ✅ typische Header
+        req.httpBody = body
         req.setValue("application/json", forHTTPHeaderField: "Accept")
-        if body != nil {
-            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            req.httpBody = body
+        if body != nil { req.setValue("application/json", forHTTPHeaderField: "Content-Type") }
+        return req
+    }
+
+    /// akzeptiert "/api/xyz" UND "/xyz"
+    private func normalize(_ path: String) -> String {
+        if path.hasPrefix("/api/") { return String(path.dropFirst(4)) } // remove "/api"
+        if path.hasPrefix("/") { return path }
+        return "/" + path
+    }
+
+    private func bodyString(_ data: Data?) -> String? {
+        guard let data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    // MARK: - Core send
+
+    private func send<T: Decodable>(_ request: URLRequest, as: T.Type) async throws -> T {
+        do {
+            let (data, resp) = try await session.data(for: request)
+            guard let http = resp as? HTTPURLResponse else {
+                throw APIError.badStatus(-1, "Keine HTTP-Antwort.")
+            }
+            guard (200...299).contains(http.statusCode) else {
+                throw APIError.badStatus(http.statusCode, bodyString(data))
+            }
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decoding(error)
+            }
+        } catch let e as APIError {
+            throw e
+        } catch {
+            throw APIError.transport(error)
         }
+    }
 
-        // ✅ falls du Auth nutzt:
-        // if let token = AuthManager.shared.token {
-        //    req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        // }
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-
-        guard let http = response as? HTTPURLResponse else {
-            throw NetworkError.invalidResponse
+    private func sendNoContent(_ request: URLRequest) async throws {
+        do {
+            let (data, resp) = try await session.data(for: request)
+            guard let http = resp as? HTTPURLResponse else {
+                throw APIError.badStatus(-1, "Keine HTTP-Antwort.")
+            }
+            guard (200...299).contains(http.statusCode) else {
+                throw APIError.badStatus(http.statusCode, bodyString(data))
+            }
+        } catch let e as APIError {
+            throw e
+        } catch {
+            throw APIError.transport(error)
         }
+    }
 
-        // Debug: Raw Body
-        #if DEBUG
-        if let raw = String(data: data, encoding: .utf8) {
-            print("➡️ \(method) \(url.absoluteString)")
-            print("⬅️ status:", http.statusCode)
-            print("⬅️ body:", raw)
+    // MARK: - Legacy-compatible API (dein bestehender Code)
+
+    /// Alt: request("/path") -> T
+    func request<T: Decodable>(_ path: String) async throws -> T {
+        let req = try makeRequest(method: "GET", path: path)
+        return try await send(req, as: T.self)
+    }
+
+    /// Alt: request("/path", method: "GET/POST/...", body: Data?) -> T
+    func request<T: Decodable>(_ path: String, method: String, body: Data? = nil) async throws -> T {
+        let req = try makeRequest(method: method, path: path, body: body)
+        return try await send(req, as: T.self)
+    }
+
+    /// Alt: request("/path", method: "...", body: Encodable) -> T
+    func request<T: Decodable, B: Encodable>(_ path: String, method: String, body: B) async throws -> T {
+        let data: Data
+        do { data = try encoder.encode(body) }
+        catch { throw APIError.encoding(error) }
+        let req = try makeRequest(method: method, path: path, body: data)
+        return try await send(req, as: T.self)
+    }
+
+    /// Alt: requestWithoutResponse("/path", method: "PATCH/POST", body: Encodable?)
+    func requestWithoutResponse<B: Encodable>(_ path: String, method: String, body: B?) async throws {
+        let data: Data?
+        if let body {
+            do { data = try encoder.encode(body) }
+            catch { throw APIError.encoding(error) }
         } else {
-            print("⬅️ status:", http.statusCode, "(body not utf8 / empty)")
+            data = nil
         }
-        #endif
-
-        guard (200...299).contains(http.statusCode) else {
-            let bodyString = String(data: data, encoding: .utf8)
-            throw NetworkError.httpStatus(http.statusCode, body: bodyString)
-        }
-
-        guard !data.isEmpty else {
-            throw NetworkError.emptyResponse
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-        do {
-            return try decoder.decode(T.self, from: data)
-        } catch let error as DecodingError {
-            throw NetworkError.decoding(Self.pretty(decodingError: error))
-        } catch {
-            throw error
-        }
+        let req = try makeRequest(method: method, path: path, body: data)
+        try await sendNoContent(req)
     }
 
-    func requestWithoutResponse(
-        _ path: String,
-        method: String = "POST",
-        body: Data? = nil
-    ) async throws {
-        // Wenn dein Backend 204 liefert: hier KEIN decode!
-        _ = try await request(EmptyResponse.self, path, method: method, body: body)
+    /// Alt: requestWithoutResponse("/path", method: "PATCH/POST") (ohne body)
+    func requestWithoutResponse(_ path: String, method: String) async throws {
+        let req = try makeRequest(method: method, path: path, body: nil)
+        try await sendNoContent(req)
     }
 
-    private func request<T: Decodable>(
-        _ type: T.Type,
-        _ path: String,
-        method: String,
-        body: Data?
-    ) async throws -> T {
-        try await request(path, method: method, body: body) as T
+    // MARK: - Auth
+
+    func login(username: String, password: String) async throws -> MeDTO {
+        let payload = LoginPayload(username: username, password: password)
+        return try await request("/login", method: "POST", body: payload)
     }
 
-    private static func pretty(decodingError: DecodingError) -> String {
-        switch decodingError {
-        case .typeMismatch(let type, let ctx):
-            return "typeMismatch(\(type)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
-        case .valueNotFound(let type, let ctx):
-            return "valueNotFound(\(type)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
-        case .keyNotFound(let key, let ctx):
-            return "keyNotFound(\(key.stringValue)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
-        case .dataCorrupted(let ctx):
-            return "dataCorrupted at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
-        @unknown default:
-            return "unknown decoding error"
-        }
+    func logout() async throws {
+        try await requestWithoutResponse("/logout", method: "POST")
+        clearCookies()
     }
-    
-    /// Testet eine beliebige Base-URL (z.B. aus den Settings), ohne `baseURL` der App zu verändern.
-    /// Erwartet, dass `base` auf ".../api" zeigt und hängt dann "/auth/me" an.
-    func testConnection(to base: String) async -> Bool {
-        do {
-            let baseTrimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let baseURL = URL(string: baseTrimmed) else { return false }
 
-            // Endpoint relativ zur Base-URL
-            guard let url = URL(string: "auth/me", relativeTo: baseURL) else { return false }
+    func me() async throws -> MeDTO {
+        try await request("/me")
+    }
 
-            var req = URLRequest(url: url)
-            req.httpMethod = "GET"
-            req.setValue("application/json", forHTTPHeaderField: "Accept")
+    func clearCookies() {
+        let storage = HTTPCookieStorage.shared
+        storage.cookies?.forEach { storage.deleteCookie($0) }
+    }
 
-            // falls Auth benötigt:
-            // if let token = AuthManager.shared.token {
-            //     req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            // }
+    // MARK: - Tank checks
 
-            let (_, response) = try await URLSession.shared.data(for: req)
+    func getTankCheckProposals() async throws -> [TankCheckProposalDTO] {
+        try await request("/tank-checks")
+    }
 
-            guard let http = response as? HTTPURLResponse else { return false }
-            return (200...299).contains(http.statusCode)
+    func getTankCheckProposal(id: Int) async throws -> TankCheckProposalDetailDTO {
+        try await request("/tank-checks/\(id)")
+    }
 
-        } catch {
-            #if DEBUG
-            print("❌ testConnection(to:) failed:", error.localizedDescription)
-            #endif
-            return false
-        }
+    func bookTankCheck(_ payload: TankCheckBookingPayload) async throws -> TankCheckBookingResponseDTO {
+        try await request("/tank-checks/book", method: "POST", body: payload)
+    }
+
+    // MARK: - Events
+
+    func getEvents() async throws -> [EventDTO] {
+        try await request("/events")
     }
 }
 
-private struct EmptyResponse: Decodable {}
+// MARK: - Auth DTOs
+
+private struct LoginPayload: Codable {
+    let username: String
+    let password: String
+}
+
+struct MeDTO: Codable, Equatable {
+    let id: String?
+    let username: String?
+    let firstname: String?
+    let lastname: String?
+    let email: String?
+    let role: String?
+
+    var fullName: String {
+        [firstname, lastname].compactMap { $0 }.joined(separator: " ").trimmingCharacters(in: .whitespaces)
+    }
+
+    var isInstructor: Bool {
+        (role ?? "").lowercased().contains("instructor")
+    }
+}

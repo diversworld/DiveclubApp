@@ -8,74 +8,80 @@
 import SwiftUI
 
 struct MainTabView: View {
-    
     @StateObject private var enrollmentStore = EnrollmentStore.shared
     @StateObject private var auth = AuthManager.shared
-    
+
+
     var body: some View {
         TabView {
-
             // MARK: Events
             NavigationStack {
                 EventsView()
                     .navigationTitle("Events")
             }
-            .tabItem {
-                Label("Events", systemImage: "calendar")
-            }
-            
-            // 👉 Schüler: Meine Kurse
-            if auth.currentMember?.isInstructor != true {
-                NavigationStack {
-                    MyCoursesView()
-                }
-                .tabItem {
-                    Label("Meine Kurse", systemImage: "book")
-                }
-                .badge(enrollmentStore.activeCount)
-            }
+            .tabItem { Label("Events", systemImage: "calendar") }
 
-            // 👉 Instructor: Instructor Dashboard
-            if auth.currentMember?.isInstructor == true {
-                NavigationStack {
-                    InstructorDashboardView()
-                }
-                .tabItem {
-                    Label("Instructor", systemImage: "person.3")
-                }
-                .badge(enrollmentStore.activeCount)
-            }
-            
-            
-            // MARK: Reservierungen
+            // MARK: Verein (hier gehören TÜV & Flaschen rein)
             NavigationStack {
-                ReservationsView()
-                    .navigationTitle("Reservierungen")
+                List {
+                    Section("Verein") {
+
+                        // Schüler: Meine Kurse
+                        if auth.isInstructor != true {
+                            NavigationLink {
+                                MyCoursesView()
+                            } label: {
+                                Label("Meine Kurse", systemImage: "book")
+                            }
+                        }
+
+                        NavigationLink {
+                            TankChecksView()
+                        } label: {
+                            Label("TÜV-Prüfungen", systemImage: "checkmark.seal")
+                        }
+
+                        NavigationLink {
+                            TanksView()
+                        } label: {
+                            Label("Flaschen", systemImage: "cylinder")
+                        }
+                    }
+
+                    // Optional: Extra Section nur für Instructor
+                    if auth.isInstructor == true {
+                        Section("Instruktor") {
+                            NavigationLink {
+                                InstructorDashboardView()
+                            } label: {
+                                Label("Instructor Dashboard", systemImage: "person.3")
+                            }
+                        }
+                    }
+                }
+                .navigationTitle("Verein")
             }
-            .tabItem {
-                Label("Reservierungen", systemImage: "list.bullet")
-            }
-            
+            .tabItem { Label("Verein", systemImage: "building.2") }
+            .badge(enrollmentStore.activeCount) // wenn du hier Badge willst
+
             // MARK: Equipment
             NavigationStack {
                 EquipmentView()
                     .navigationTitle("Equipment")
             }
-            .tabItem {
-                Label("Equipment", systemImage: "shippingbox")
-            }
-            
-            // MARK: Instructor
-            if AuthManager.shared.currentMember?.isInstructor == true {
+            .tabItem { Label("Equipment", systemImage: "shippingbox") }
+
+            // MARK: Instructor (nur EINMAL, falls du ihn als eigenen Tab willst)
+            // statt auth.currentMember?.isInstructor:
+            if auth.isInstructor {
                 NavigationStack {
                     InstructorDashboardView()
                         .navigationTitle("Instructor")
                 }
-                .tabItem {
-                    Label("Instructor", systemImage: "person.3")
-                }
+                .tabItem { Label("Instructor", systemImage: "person.3") }
+                .badge(enrollmentStore.activeCount)
             }
-            
+
             // MARK: Profil
             NavigationStack {
                 ProfileView()
@@ -83,25 +89,19 @@ struct MainTabView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button("Logout") {
-                                Task {
-                                    await AuthManager.shared.logout()
-                                }
+                                Task { await auth.logout() }
                             }
                         }
                     }
             }
-            .tabItem {
-                Label("Profil", systemImage: "person.circle")
-            }
-            
+            .tabItem { Label("Profil", systemImage: "person.circle") }
+
             // MARK: Settings
             NavigationStack {
                 SettingsView()
                     .navigationTitle("Einstellungen")
             }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
-            }
+            .tabItem { Label("Settings", systemImage: "gearshape") }
         }
     }
 }

@@ -70,7 +70,7 @@ struct EnrollmentInfo: Decodable {
     enum CodingKeys: String, CodingKey {
         case id
         case courseId = "courseId"
-        case eventId = "event_id"
+        case eventId = "eventId"
         case status
     }
 }
@@ -96,7 +96,7 @@ struct StudentExercise: Decodable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case exerciseId = "exercise_id"
+        case exerciseId = "exerciseId"
         case status
         case dateCompleted
         case title

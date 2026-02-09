@@ -72,7 +72,7 @@ final class EventDetailViewModel: ObservableObject {
         do {
             let request = CourseEnrollmentRequest(
                 courseId: courseId,
-                event_id: event.id
+                eventId: event.id
             )
             
             let body = try JSONEncoder().encode(request)

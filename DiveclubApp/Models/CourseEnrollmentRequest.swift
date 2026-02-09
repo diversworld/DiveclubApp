@@ -17,5 +17,5 @@ import SwiftUI
 
 struct CourseEnrollmentRequest: Codable {
     let courseId: Int
-    let event_id: Int?
+    let eventId: Int?
 }
