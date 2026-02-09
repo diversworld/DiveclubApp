@@ -7,107 +7,175 @@
 
 import Foundation
 
+enum NetworkError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case httpStatus(Int, body: String?)
+    case emptyResponse
+    case decoding(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Ungültige URL."
+        case .invalidResponse: return "Ungültige Server-Antwort."
+        case .httpStatus(let code, let body):
+            if let body, !body.isEmpty {
+                return "HTTP \(code): \(body)"
+            } else {
+                return "HTTP \(code)"
+            }
+        case .emptyResponse:
+            return "Server hat keine Daten geliefert (leere Antwort)."
+        case .decoding(let msg):
+            return "Decoding-Fehler: \(msg)"
+        }
+    }
+}
+
 final class APIClient {
-
     static let shared = APIClient()
-    private init() {}
 
+    // ✅ anpassen
     private var baseURL: URL {
-        URL(string: AppSettingsManager.shared.baseURL)!
+        let raw = AppSettingsManager.shared.baseURL
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Falls User "…/api" ohne Slash speichert, korrigieren wir das hier robust:
+        var normalized = raw
+        if !normalized.hasSuffix("/") { normalized += "/" }
+
+        return URL(string: normalized)!
     }
 
-    private let session: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.httpCookieStorage = HTTPCookieStorage.shared
-        config.httpShouldSetCookies = true
-        return URLSession(configuration: config)
-    }()
-    
+    private init() {}
+
     func request<T: Decodable>(
         _ path: String,
         method: String = "GET",
         body: Data? = nil
     ) async throws -> T {
-        
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body
 
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw NetworkError.invalidURL
         }
 
-        print("STATUS CODE:", httpResponse.statusCode)
+        var req = URLRequest(url: url)
+        req.httpMethod = method
 
-        if httpResponse.statusCode == 401 {
-            await MainActor.run {
-                AuthManager.shared.isAuthenticated = false
-            }
+        // ✅ typische Header
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        if body != nil {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = body
         }
 
-        if let jsonString = String(data: data, encoding: .utf8) {
-            print("SERVER RESPONSE:", jsonString)
+        // ✅ falls du Auth nutzt:
+        // if let token = AuthManager.shared.token {
+        //    req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // }
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw NetworkError.invalidResponse
         }
 
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+        // Debug: Raw Body
+        #if DEBUG
+        if let raw = String(data: data, encoding: .utf8) {
+            print("➡️ \(method) \(url.absoluteString)")
+            print("⬅️ status:", http.statusCode)
+            print("⬅️ body:", raw)
+        } else {
+            print("⬅️ status:", http.statusCode, "(body not utf8 / empty)")
+        }
+        #endif
+
+        guard (200...299).contains(http.statusCode) else {
+            let bodyString = String(data: data, encoding: .utf8)
+            throw NetworkError.httpStatus(http.statusCode, body: bodyString)
+        }
+
+        guard !data.isEmpty else {
+            throw NetworkError.emptyResponse
         }
 
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
-        return try decoder.decode(T.self, from: data)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch let error as DecodingError {
+            throw NetworkError.decoding(Self.pretty(decodingError: error))
+        } catch {
+            throw error
+        }
     }
 
     func requestWithoutResponse(
         _ path: String,
+        method: String = "POST",
+        body: Data? = nil
+    ) async throws {
+        // Wenn dein Backend 204 liefert: hier KEIN decode!
+        _ = try await request(EmptyResponse.self, path, method: method, body: body)
+    }
+
+    private func request<T: Decodable>(
+        _ type: T.Type,
+        _ path: String,
         method: String,
         body: Data?
-    ) async throws {
+    ) async throws -> T {
+        try await request(path, method: method, body: body) as T
+    }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-
-        print("STATUS CODE:", httpResponse.statusCode)
-
-        if let jsonString = String(data: data, encoding: .utf8) {
-            print("SERVER RESPONSE:", jsonString)
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+    private static func pretty(decodingError: DecodingError) -> String {
+        switch decodingError {
+        case .typeMismatch(let type, let ctx):
+            return "typeMismatch(\(type)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
+        case .valueNotFound(let type, let ctx):
+            return "valueNotFound(\(type)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
+        case .keyNotFound(let key, let ctx):
+            return "keyNotFound(\(key.stringValue)) at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
+        case .dataCorrupted(let ctx):
+            return "dataCorrupted at \(ctx.codingPath.map(\.stringValue).joined(separator: ".")): \(ctx.debugDescription)"
+        @unknown default:
+            return "unknown decoding error"
         }
     }
     
-    func testConnection(to urlString: String) async -> Bool {
-        
-        guard let url = URL(string: urlString) else { return false }
-        
+    /// Testet eine beliebige Base-URL (z.B. aus den Settings), ohne `baseURL` der App zu verändern.
+    /// Erwartet, dass `base` auf ".../api" zeigt und hängt dann "/auth/me" an.
+    func testConnection(to base: String) async -> Bool {
         do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.timeoutInterval = 10
-            
-            let (_, response) = try await session.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                return (200...299).contains(httpResponse.statusCode)
-            }
-            
-            return false
+            let baseTrimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let baseURL = URL(string: baseTrimmed) else { return false }
+
+            // Endpoint relativ zur Base-URL
+            guard let url = URL(string: "auth/me", relativeTo: baseURL) else { return false }
+
+            var req = URLRequest(url: url)
+            req.httpMethod = "GET"
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            // falls Auth benötigt:
+            // if let token = AuthManager.shared.token {
+            //     req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            // }
+
+            let (_, response) = try await URLSession.shared.data(for: req)
+
+            guard let http = response as? HTTPURLResponse else { return false }
+            return (200...299).contains(http.statusCode)
+
         } catch {
+            #if DEBUG
+            print("❌ testConnection(to:) failed:", error.localizedDescription)
+            #endif
             return false
         }
     }
 }
+
+private struct EmptyResponse: Decodable {}

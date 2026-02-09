@@ -71,7 +71,7 @@ final class EventDetailViewModel: ObservableObject {
         
         do {
             let request = CourseEnrollmentRequest(
-                course_id: courseId,
+                courseId: courseId,
                 event_id: event.id
             )
             

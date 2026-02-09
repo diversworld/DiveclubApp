@@ -10,36 +10,28 @@ import Combine
 
 @MainActor
 final class InstructorViewModel: ObservableObject {
-    
-    @Published var students: [InstructorStudent] = []
+
+    @Published var enrollments: [InstructorEnrollment] = []
+    @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    private var timer: AnyCancellable?
-    
-    func startAutoRefresh() {
-        timer = Timer.publish(every: 15, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
-                Task { await self.load() }
-            }
-    }
-    
-    func stopAutoRefresh() {
-        timer?.cancel()
-    }
-    
+
     func load() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
         do {
-            print("Is Instructor:",
-                  AuthManager.shared.currentMember?.isInstructor ?? false)
+            // optional: nur laden, wenn Instructor
+            guard AuthManager.shared.currentMember?.isInstructor == true else {
+                enrollments = []
+                return
+            }
 
-            students = try await APIClient.shared.request("progress/instructor")
-            
-            print("Loaded enrollments:", students.count)
-
+            let result: [InstructorEnrollment] = try await APIClient.shared.request("progress/instructor")
+            enrollments = result
         } catch {
-            print("Instructor load error:", error)
             errorMessage = error.localizedDescription
+            enrollments = []
         }
     }
 }

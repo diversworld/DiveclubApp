@@ -10,6 +10,7 @@ import SwiftUI
 struct MainTabView: View {
     
     @StateObject private var enrollmentStore = EnrollmentStore.shared
+    @StateObject private var auth = AuthManager.shared
     
     var body: some View {
         TabView {
@@ -23,15 +24,28 @@ struct MainTabView: View {
                 Label("Events", systemImage: "calendar")
             }
             
-            // MARK: Meine Kurse
-            NavigationStack {
-                MyCoursesView()
-                    .navigationTitle("Meine Kurse")
+            // 👉 Schüler: Meine Kurse
+            if auth.currentMember?.isInstructor != true {
+                NavigationStack {
+                    MyCoursesView()
+                }
+                .tabItem {
+                    Label("Meine Kurse", systemImage: "book")
+                }
+                .badge(enrollmentStore.activeCount)
             }
-            .tabItem {
-                Label("Meine Kurse", systemImage: "graduationcap")
+
+            // 👉 Instructor: Instructor Dashboard
+            if auth.currentMember?.isInstructor == true {
+                NavigationStack {
+                    InstructorDashboardView()
+                }
+                .tabItem {
+                    Label("Instructor", systemImage: "person.3")
+                }
+                .badge(enrollmentStore.activeCount)
             }
-            .badge(enrollmentStore.activeCount)
+            
             
             // MARK: Reservierungen
             NavigationStack {

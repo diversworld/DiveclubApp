@@ -5,57 +5,48 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
-//
-//  ProfileView.swift
-//  DiveclubApp
-//
-
-//
-//  ProfileView.swift
-//  DiveclubApp
-//
 
 import SwiftUI
 
 struct ProfileView: View {
-    
+
     @StateObject private var vm = ProfileViewModel()
-    @State private var showSuccessBanner = false
-    
+
     var body: some View {
         NavigationStack {
-            
             Group {
-                
-                // MARK: Loading
-                
                 if vm.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                
-                // MARK: Content
-                
-                else if let member = vm.member {
-                    
+                } else if let member = vm.member {
                     ScrollView {
-                        VStack(spacing: 20) {
-                            
-                            headerSection(member: member)
-                            
+                        VStack(spacing: 16) {
+
+                            headerCard(member: member)
+
                             infoCard(member: member)
-                            
-                            logoutSection
+
+                            actionsCard
+
+                            logoutButton
                         }
                         .padding()
                     }
-                }
-                
-                // MARK: Error
-                
-                else if let error = vm.errorMessage {
-                    Text("Fehler: \(error)")
-                        .foregroundColor(.red)
+                } else if let error = vm.errorMessage {
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(.orange)
+                        Text("Fehler")
+                            .font(.title2).bold()
+                        Text(error)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                } else {
+                    Text("Keine Profildaten vorhanden.")
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Profil")
@@ -63,38 +54,30 @@ struct ProfileView: View {
             .task {
                 await vm.load()
             }
-            .overlay(alignment: .top) {
-                if showSuccessBanner {
-                    successBanner
-                }
-            }
         }
     }
 }
 
-//# MARK: - Sections
+// MARK: - Cards
 
 extension ProfileView {
-    
-    // MARK: Header
-    
-    private func headerSection(member: Member) -> some View {
-        VStack(spacing: 8) {
-            
+
+    private func headerCard(member: Member) -> some View {
+        VStack(spacing: 10) {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 90)
+                .frame(width: 84, height: 84)
                 .foregroundStyle(.blue)
-            
-            Text(member.fullName)
+
+            Text(member.fullName.isEmpty ? member.username : member.fullName)
                 .font(.title2)
                 .bold()
-            
+
             Text(member.username)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            
+
             if member.isInstructor {
                 instructorBadge
             }
@@ -102,63 +85,95 @@ extension ProfileView {
         .padding()
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
-    
-    // MARK: Info Card
-    
+
     private func infoCard(member: Member) -> some View {
-        VStack(spacing: 16) {
-            
+        VStack(spacing: 12) {
             infoRow(title: "E-Mail", value: member.email)
             infoRow(title: "Straße", value: member.street)
             infoRow(title: "PLZ", value: member.postal)
             infoRow(title: "Ort", value: member.city)
             infoRow(title: "Telefon", value: member.phone)
             infoRow(title: "Mobil", value: member.mobile)
-            
+
             if let birth = member.formattedBirthDate {
                 infoRow(title: "Geburtsdatum", value: birth)
             }
         }
         .padding()
+        .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
-    
-    // MARK: Logout
-    
-    private var logoutSection: some View {
-        Button(role: .destructive) {
-            Task {
-                await AuthManager.shared.logout()
+
+    private var actionsCard: some View {
+        VStack(spacing: 0) {
+
+            // ✅ HIER IST DER NavigationLink, den du vermisst hast
+            NavigationLink {
+                ChangePasswordView(vm: vm)
+            } label: {
+                rowLinkLabel(
+                    title: "Passwort ändern",
+                    systemImage: "key.fill"
+                )
             }
+            .buttonStyle(.plain)
+
+        }
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var logoutButton: some View {
+        Button(role: .destructive) {
+            Task { await AuthManager.shared.logout() }
         } label: {
             Text("Logout")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
         .tint(.red)
-        .padding(.top)
+        .padding(.top, 4)
     }
 }
 
-//# MARK: - Components
+// MARK: - Components
 
 extension ProfileView {
-    
+
     private func infoRow(title: String, value: String?) -> some View {
-        HStack {
+        HStack(spacing: 12) {
             Text(title)
                 .foregroundStyle(.secondary)
-            
             Spacer()
-            
-            Text(value?.isEmpty == false ? value! : "-")
+            Text((value?.isEmpty == false) ? value! : "–")
                 .bold()
+                .multilineTextAlignment(.trailing)
         }
+        .font(.subheadline)
     }
-    
+
+    private func rowLinkLabel(title: String, systemImage: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.blue)
+                .frame(width: 22)
+
+            Text(title)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .contentShape(Rectangle())
+    }
+
     private var instructorBadge: some View {
         HStack(spacing: 6) {
             Image(systemName: "star.fill")
@@ -171,18 +186,5 @@ extension ProfileView {
         .background(.blue.opacity(0.15))
         .foregroundStyle(.blue)
         .clipShape(Capsule())
-    }
-    
-    private var successBanner: some View {
-        HStack {
-            Image(systemName: "checkmark.circle.fill")
-            Text("Profil aktualisiert")
-        }
-        .padding()
-        .background(.green)
-        .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .padding()
-        .transition(.move(edge: .top))
     }
 }
