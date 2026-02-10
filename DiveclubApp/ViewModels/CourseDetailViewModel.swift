@@ -13,7 +13,7 @@ final class CourseDetailViewModel: ObservableObject {
 
     @Published var enrollment: StudentEnrollmentProgress
 
-    // Event-Header-Infos (Event-Titel/Ort/Zeiten)
+    // Event-Header-Infos
     @Published var eventDetail: EventDetail?
     @Published var isLoadingHeader = false
     @Published var headerError: String?
@@ -27,7 +27,7 @@ final class CourseDetailViewModel: ObservableObject {
         self.enrollment = enrollment
     }
 
-    /// Lädt Event-Details für Header (Kursdaten kommen bereits aus /api/progress -> enrollment.course)
+    /// Lädt Event-Details für Header
     func loadHeader() async {
         guard !isLoadingHeader else { return }
 
@@ -42,10 +42,10 @@ final class CourseDetailViewModel: ObservableObject {
         }
 
         do {
-            let e: EventDetail = try await APIClient.shared.request("events/\(eventId)")
+            let e: EventDetail = try await APIClient.shared.request("/events/\(eventId)")
             eventDetail = e
         } catch {
-            headerError = error.localizedDescription
+            headerError = Self.describe(error)
             eventDetail = nil
         }
     }
@@ -64,12 +64,18 @@ final class CourseDetailViewModel: ObservableObject {
         defer { isLoadingSchedule = false }
 
         do {
-            let result: [EventScheduleItem] = try await APIClient.shared.request("events/\(eventId)/schedule")
+            let result: [EventScheduleItem] = try await APIClient.shared.request("/events/\(eventId)/schedule")
             schedule = result
         } catch {
-            scheduleError = error.localizedDescription
+            scheduleError = Self.describe(error)
             schedule = []
         }
     }
-}
 
+    private static func describe(_ error: Error) -> String {
+        if case APIError.badStatus(let code, let body) = error {
+            return "Serverfehler \(code): \(body ?? "")"
+        }
+        return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+    }
+}

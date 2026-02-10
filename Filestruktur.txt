@@ -1,0 +1,219 @@
+total 24
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 .
+drwxr-xr-x   8 eckhardbecker  staff   256  9 Feb. 20:05 ..
+drwxr-xr-x   6 eckhardbecker  staff   192  9 Feb. 13:02 Assets.xcassets
+drwxr-xr-x   3 eckhardbecker  staff    96  9 Feb. 18:33 Authentication
+drwxr-xr-x   5 eckhardbecker  staff   160  9 Feb. 14:53 Components
+-rw-r--r--@  1 eckhardbecker  staff  1598  7 Feb. 16:50 ContentView.swift
+-rw-r--r--@  1 eckhardbecker  staff   627  9 Feb. 18:41 DiveclubAppApp.swift
+drwxr-xr-x   5 eckhardbecker  staff   160  9 Feb. 18:37 Extensions
+-rw-r--r--@  1 eckhardbecker  staff   246  7 Feb. 16:50 Item.swift
+drwxr-xr-x   4 eckhardbecker  staff   128  9 Feb. 18:52 Managers
+drwxr-xr-x  26 eckhardbecker  staff   832  9 Feb. 19:32 Models
+drwxr-xr-x   6 eckhardbecker  staff   192  9 Feb. 19:29 Network
+drwxr-xr-x   5 eckhardbecker  staff   160  8 Feb. 13:34 Security
+drwxr-xr-x   3 eckhardbecker  staff    96  7 Feb. 22:58 Settings
+drwxr-xr-x  13 eckhardbecker  staff   416  9 Feb. 19:19 ViewModels
+drwxr-xr-x  24 eckhardbecker  staff   768  9 Feb. 19:16 Views
+
+DiveclubApp/Assets.xcassets:
+total 8
+drwxr-xr-x   6 eckhardbecker  staff  192  9 Feb. 13:02 .
+drwxr-xr-x  16 eckhardbecker  staff  512  9 Feb. 18:41 ..
+drwxr-xr-x   3 eckhardbecker  staff   96  9 Feb. 13:01 AccentColor.colorset
+drwxr-xr-x   6 eckhardbecker  staff  192  9 Feb. 12:58 AppIcon.appiconset
+-rw-r--r--   1 eckhardbecker  staff   63  9 Feb. 13:01 Contents.json
+drwxr-xr-x   5 eckhardbecker  staff  160  9 Feb. 13:02 DiveClubManager
+
+DiveclubApp/Assets.xcassets/AccentColor.colorset:
+total 8
+drwxr-xr-x  3 eckhardbecker  staff   96  9 Feb. 13:01 .
+drwxr-xr-x  6 eckhardbecker  staff  192  9 Feb. 13:02 ..
+-rw-r--r--  1 eckhardbecker  staff  123  9 Feb. 13:01 Contents.json
+
+DiveclubApp/Assets.xcassets/AppIcon.appiconset:
+total 1496
+drwxr-xr-x  6 eckhardbecker  staff     192  9 Feb. 12:58 .
+drwxr-xr-x  6 eckhardbecker  staff     192  9 Feb. 13:02 ..
+-rw-r--r--@ 1 eckhardbecker  staff     725  9 Feb. 12:58 Contents.json
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 12:57 Diversworld 1.png
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 12:58 Diversworld 2.png
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 12:57 Diversworld.png
+
+DiveclubApp/Assets.xcassets/DiveClubManager:
+total 8
+drwxr-xr-x  5 eckhardbecker  staff  160  9 Feb. 13:02 .
+drwxr-xr-x  6 eckhardbecker  staff  192  9 Feb. 13:02 ..
+drwxr-xr-x  4 eckhardbecker  staff  128  9 Feb. 13:02 Assets
+-rw-r--r--@ 1 eckhardbecker  staff   63  9 Feb. 13:01 Contents.json
+drwxr-xr-x  4 eckhardbecker  staff  128  9 Feb. 13:01 icon.dataset
+
+DiveclubApp/Assets.xcassets/DiveClubManager/Assets:
+total 8
+drwxr-xr-x  4 eckhardbecker  staff  128  9 Feb. 13:02 .
+drwxr-xr-x  5 eckhardbecker  staff  160  9 Feb. 13:02 ..
+-rw-r--r--@ 1 eckhardbecker  staff   63  9 Feb. 13:02 Contents.json
+drwxr-xr-x  6 eckhardbecker  staff  192  9 Feb. 13:02 Diversworld.imageset
+
+DiveclubApp/Assets.xcassets/DiveClubManager/Assets/Diversworld.imageset:
+total 1496
+drwxr-xr-x  6 eckhardbecker  staff     192  9 Feb. 13:02 .
+drwxr-xr-x  4 eckhardbecker  staff     128  9 Feb. 13:02 ..
+-rw-r--r--@ 1 eckhardbecker  staff     389  9 Feb. 13:02 Contents.json
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 13:02 Diversworld 1.png
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 13:02 Diversworld 2.png
+-rw-r--r--  1 eckhardbecker  staff  250984  9 Feb. 13:02 Diversworld.png
+
+DiveclubApp/Assets.xcassets/DiveClubManager/icon.dataset:
+total 16
+drwxr-xr-x  4 eckhardbecker  staff   128  9 Feb. 13:01 .
+drwxr-xr-x  5 eckhardbecker  staff   160  9 Feb. 13:02 ..
+-rw-r--r--@ 1 eckhardbecker  staff   153  9 Feb. 13:01 Contents.json
+-rw-r--r--@ 1 eckhardbecker  staff  1394  9 Feb. 13:01 icon.json
+
+DiveclubApp/Authentication:
+total 8
+drwxr-xr-x   3 eckhardbecker  staff    96  9 Feb. 18:33 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  2074  9 Feb. 18:33 AuthManager.swift
+
+DiveclubApp/Components:
+total 24
+drwxr-xr-x   5 eckhardbecker  staff   160  9 Feb. 14:53 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff   869  9 Feb. 14:49 PasswordField.swift
+-rw-r--r--@  1 eckhardbecker  staff  1292  9 Feb. 14:53 PasswordStrengthView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1043  9 Feb. 14:49 TopBanner.swift
+
+DiveclubApp/Extensions:
+total 32
+drwxr-xr-x   5 eckhardbecker  staff   160  9 Feb. 18:37 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff   389  8 Feb. 23:49 Date+Format.swift
+-rw-r--r--@  1 eckhardbecker  staff  3445  8 Feb. 22:28 String+Entities.swift
+-rw-r--r--@  1 eckhardbecker  staff  4378  9 Feb. 10:35 String+HTML.swift
+
+DiveclubApp/Managers:
+total 16
+drwxr-xr-x   4 eckhardbecker  staff   128  9 Feb. 18:52 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  1194  8 Feb. 16:13 EnrollmentStore.swift
+-rw-r--r--@  1 eckhardbecker  staff  1018  9 Feb. 18:52 TankStore.swift
+
+DiveclubApp/Models:
+total 208
+drwxr-xr-x  26 eckhardbecker  staff   832  9 Feb. 19:32 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff   237  9 Feb. 14:49 ChangePasswordRequest.swift
+-rw-r--r--@  1 eckhardbecker  staff   335  8 Feb. 23:33 CourseDetail.swift
+-rw-r--r--@  1 eckhardbecker  staff   328  9 Feb. 09:53 CourseEnrollmentRequest.swift
+-rw-r--r--@  1 eckhardbecker  staff  1929  8 Feb. 13:12 Enrollment.swift
+-rw-r--r--@  1 eckhardbecker  staff   651  8 Feb. 10:12 Event.swift
+-rw-r--r--@  1 eckhardbecker  staff  1433  9 Feb. 14:49 EventDetail.swift
+-rw-r--r--@  1 eckhardbecker  staff  3119  9 Feb. 14:49 EventScheduleItem.swift
+-rw-r--r--@  1 eckhardbecker  staff  1116  8 Feb. 21:27 InstructorEnrollment.swift
+-rw-r--r--@  1 eckhardbecker  staff  3377  9 Feb. 13:03 InstructorExercise.swift
+-rw-r--r--@  1 eckhardbecker  staff  9830  8 Feb. 21:46 InstructorStudent.swift
+-rw-r--r--@  1 eckhardbecker  staff   194  7 Feb. 19:56 LoginRequest.swift
+-rw-r--r--@  1 eckhardbecker  staff   192  7 Feb. 21:04 LoginResponse.swift
+-rw-r--r--@  1 eckhardbecker  staff  2710  8 Feb. 20:25 Member.swift
+-rw-r--r--@  1 eckhardbecker  staff  1423  7 Feb. 22:17 PasswordStrength.swift
+-rw-r--r--@  1 eckhardbecker  staff    88  8 Feb. 11:26 Progress.swift
+-rw-r--r--@  1 eckhardbecker  staff   193  7 Feb. 23:22 Reservation.swift
+-rw-r--r--@  1 eckhardbecker  staff   170  7 Feb. 23:26 ReservationRequest.swift
+-rw-r--r--@  1 eckhardbecker  staff   301  9 Feb. 17:18 ScubaTank.swift
+-rw-r--r--@  1 eckhardbecker  staff   423  8 Feb. 11:35 Student.swift
+-rw-r--r--@  1 eckhardbecker  staff  2750  9 Feb. 19:32 StudentEnrollmentProgress.swift
+-rw-r--r--@  1 eckhardbecker  staff  1097  9 Feb. 14:35 Tank.swift
+-rw-r--r--@  1 eckhardbecker  staff   886  9 Feb. 14:35 TankCheckDetail.swift
+-rw-r--r--@  1 eckhardbecker  staff   896  9 Feb. 14:35 TankCheckProposal.swift
+-rw-r--r--@  1 eckhardbecker  staff   388  7 Feb. 21:41 UpdateProfileRequest.swift
+
+DiveclubApp/Network:
+total 24
+drwxr-xr-x   6 eckhardbecker  staff   192  9 Feb. 19:29 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  8103  9 Feb. 19:29 APIClient.swift
+drwxr-xr-x   4 eckhardbecker  staff   128  9 Feb. 19:32 DTOs
+-rw-r--r--@  1 eckhardbecker  staff   144  9 Feb. 17:37 NetworkError.swift
+drwxr-xr-x   3 eckhardbecker  staff    96  8 Feb. 22:01 Request
+
+DiveclubApp/Network/DTOs:
+total 24
+drwxr-xr-x  4 eckhardbecker  staff   128  9 Feb. 19:32 .
+drwxr-xr-x  6 eckhardbecker  staff   192  9 Feb. 19:29 ..
+-rw-r--r--@ 1 eckhardbecker  staff   346  9 Feb. 16:28 EventDTO.swift
+-rw-r--r--@ 1 eckhardbecker  staff  7237  9 Feb. 16:19 TankCheckDTOs.swift
+
+DiveclubApp/Network/Request:
+total 8
+drwxr-xr-x  3 eckhardbecker  staff   96  8 Feb. 22:01 .
+drwxr-xr-x  6 eckhardbecker  staff  192  9 Feb. 19:29 ..
+-rw-r--r--@ 1 eckhardbecker  staff  352  8 Feb. 22:01 UpdateExerciseRequest.swift
+
+DiveclubApp/Security:
+total 24
+drwxr-xr-x   5 eckhardbecker  staff  160  8 Feb. 13:34 .
+drwxr-xr-x  16 eckhardbecker  staff  512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  450  8 Feb. 13:34 APIGuard.swift
+-rw-r--r--@  1 eckhardbecker  staff  855  7 Feb. 22:56 AppLockManager.swift
+-rw-r--r--@  1 eckhardbecker  staff  910  7 Feb. 22:32 BiometricAuth.swift
+
+DiveclubApp/Settings:
+total 8
+drwxr-xr-x   3 eckhardbecker  staff    96  7 Feb. 22:58 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  1271  7 Feb. 22:58 AppSettingsManager.swift
+
+DiveclubApp/ViewModels:
+total 88
+drwxr-xr-x  13 eckhardbecker  staff   416  9 Feb. 19:19 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  2223  9 Feb. 19:19 CourseDetailViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  2831  9 Feb. 09:53 EventDetailViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  1007  9 Feb. 16:35 EventsViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  1006  9 Feb. 18:38 InstructorDashboardViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  1892  8 Feb. 22:34 InstructorEnrollmentDetailViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff   924  8 Feb. 20:05 InstructorViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  1451  9 Feb. 19:19 MyCoursesViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  3017  8 Feb. 21:00 ProfileViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff   672  9 Feb. 16:35 TankCheckDetailViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff  1702  9 Feb. 19:15 TankCheckViewModel.swift
+-rw-r--r--@  1 eckhardbecker  staff   272  7 Feb. 18:29 TestView.swift
+
+DiveclubApp/Views:
+total 232
+drwxr-xr-x  24 eckhardbecker  staff   768  9 Feb. 19:16 .
+drwxr-xr-x  16 eckhardbecker  staff   512  9 Feb. 18:41 ..
+-rw-r--r--@  1 eckhardbecker  staff  2544  8 Feb. 20:25 ChangePasswordView.swift
+drwxr-xr-x   7 eckhardbecker  staff   224  8 Feb. 11:29 Components
+-rw-r--r--@  1 eckhardbecker  staff  7114  9 Feb. 13:58 CourseDetailView.swift
+-rw-r--r--@  1 eckhardbecker  staff  3292  8 Feb. 20:52 EditProfileView.swift
+-rw-r--r--@  1 eckhardbecker  staff   284  7 Feb. 19:17 EquipmentView.swift
+-rw-r--r--@  1 eckhardbecker  staff  5190  8 Feb. 10:56 EventDetailView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1973  9 Feb. 16:35 EventsView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1440  9 Feb. 18:52 HTMLTextView.swift
+-rw-r--r--@  1 eckhardbecker  staff  4407  8 Feb. 22:28 InstructorDashboardView.swift
+-rw-r--r--@  1 eckhardbecker  staff  5480  8 Feb. 22:34 InstructorEnrollmentDetailView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1369  7 Feb. 22:51 LockView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1212  8 Feb. 13:34 LoginView.swift
+-rw-r--r--@  1 eckhardbecker  staff  3654  9 Feb. 16:35 MainTabView.swift
+-rw-r--r--@  1 eckhardbecker  staff  2608  9 Feb. 19:14 MyCoursesView.swift
+-rw-r--r--@  1 eckhardbecker  staff  5531  8 Feb. 20:44 ProfileView.swift
+-rw-r--r--@  1 eckhardbecker  staff   300  7 Feb. 19:38 ReservationsView.swift
+-rw-r--r--@  1 eckhardbecker  staff  4117  8 Feb. 21:26 SettingsView.swift
+-rw-r--r--@  1 eckhardbecker  staff  8449  9 Feb. 18:52 TankCheckBookingView.swift
+-rw-r--r--@  1 eckhardbecker  staff  3861  9 Feb. 16:19 TankCheckDetailView.swift
+-rw-r--r--@  1 eckhardbecker  staff  2292  9 Feb. 19:16 TankChecksView.swift
+-rw-r--r--@  1 eckhardbecker  staff  1968  9 Feb. 18:52 TankEditorView.swift
+-rw-r--r--@  1 eckhardbecker  staff  2498  9 Feb. 14:49 TanksView.swift
+
+DiveclubApp/Views/Components:
+total 40
+drwxr-xr-x   7 eckhardbecker  staff   224  8 Feb. 11:29 .
+drwxr-xr-x  24 eckhardbecker  staff   768  9 Feb. 19:16 ..
+-rw-r--r--@  1 eckhardbecker  staff  2889  8 Feb. 10:45 EnrollmentCard.swift
+-rw-r--r--@  1 eckhardbecker  staff  1360  8 Feb. 11:19 EnrollmentRow.swift
+-rw-r--r--@  1 eckhardbecker  staff   749  8 Feb. 10:45 LiquidGlassBackground.swift
+-rw-r--r--@  1 eckhardbecker  staff   352  8 Feb. 10:42 SectionHeader.swift
+-rw-r--r--@  1 eckhardbecker  staff   797  8 Feb. 11:29 StudentProgressRow.swift

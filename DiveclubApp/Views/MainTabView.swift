@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct MainTabView: View {
+
     @StateObject private var enrollmentStore = EnrollmentStore.shared
     @StateObject private var auth = AuthManager.shared
 
-
     var body: some View {
         TabView {
+
             // MARK: Events
             NavigationStack {
                 EventsView()
@@ -21,48 +22,31 @@ struct MainTabView: View {
             }
             .tabItem { Label("Events", systemImage: "calendar") }
 
-            // MARK: Verein (hier gehören TÜV & Flaschen rein)
+            // MARK: Kurse / Instructor
             NavigationStack {
-                List {
-                    Section("Verein") {
-
-                        // Schüler: Meine Kurse
-                        if auth.isInstructor != true {
-                            NavigationLink {
-                                MyCoursesView()
-                            } label: {
-                                Label("Meine Kurse", systemImage: "book")
-                            }
-                        }
-
-                        NavigationLink {
-                            TankChecksView()
-                        } label: {
-                            Label("TÜV-Prüfungen", systemImage: "checkmark.seal")
-                        }
-
-                        NavigationLink {
-                            TanksView()
-                        } label: {
-                            Label("Flaschen", systemImage: "cylinder")
-                        }
-                    }
-
-                    // Optional: Extra Section nur für Instructor
-                    if auth.isInstructor == true {
-                        Section("Instruktor") {
-                            NavigationLink {
-                                InstructorDashboardView()
-                            } label: {
-                                Label("Instructor Dashboard", systemImage: "person.3")
-                            }
-                        }
-                    }
+                if auth.isInstructor {
+                    InstructorDashboardView()
+                        .navigationTitle("Instructor")
+                } else {
+                    MyCoursesView()
+                        .navigationTitle("Meine Kurse")
                 }
-                .navigationTitle("Verein")
             }
-            .tabItem { Label("Verein", systemImage: "building.2") }
-            .badge(enrollmentStore.activeCount) // wenn du hier Badge willst
+            .tabItem {
+                if auth.isInstructor {
+                    Label("Instructor", systemImage: "person.3")
+                } else {
+                    Label("Meine Kurse", systemImage: "book")
+                }
+            }
+            .badge(enrollmentStore.activeCount)
+
+            // MARK: TÜV Prüfungen
+            NavigationStack {
+                TankChecksView()
+                    .navigationTitle("TÜV Prüfungen")
+            }
+            .tabItem { Label("TÜV", systemImage: "checkmark.seal") }
 
             // MARK: Equipment
             NavigationStack {
@@ -70,17 +54,6 @@ struct MainTabView: View {
                     .navigationTitle("Equipment")
             }
             .tabItem { Label("Equipment", systemImage: "shippingbox") }
-
-            // MARK: Instructor (nur EINMAL, falls du ihn als eigenen Tab willst)
-            // statt auth.currentMember?.isInstructor:
-            if auth.isInstructor {
-                NavigationStack {
-                    InstructorDashboardView()
-                        .navigationTitle("Instructor")
-                }
-                .tabItem { Label("Instructor", systemImage: "person.3") }
-                .badge(enrollmentStore.activeCount)
-            }
 
             // MARK: Profil
             NavigationStack {
@@ -102,6 +75,9 @@ struct MainTabView: View {
                     .navigationTitle("Einstellungen")
             }
             .tabItem { Label("Settings", systemImage: "gearshape") }
+        }
+        .task {
+            await enrollmentStore.refresh()
         }
     }
 }

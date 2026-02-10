@@ -5,13 +5,6 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
-//
-//  MyCoursesView.swift
-//  DiveclubApp
-//
-//  Created by Eckhard Becker on 07.02.26.
-//
-
 import SwiftUI
 
 struct MyCoursesView: View {
@@ -43,31 +36,33 @@ struct MyCoursesView: View {
                             CourseDetailView(enrollment: e)
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
-
-                                Text(e.courseTitle.decodedEntities)
+                                Text(e.course.title.decodedEntities)
                                     .font(.headline)
 
+                                // falls du eventTitle nicht in progress hast: zeig eventId
                                 if let eventId = e.eventId {
                                     Text("Event #\(eventId)")
                                         .foregroundStyle(.secondary)
-                                } else {
-                                    Text("Event")
-                                        .foregroundStyle(.secondary)
                                 }
 
-                                ProgressView(value: e.progressValue)
+                                Text(e.course.title.decodedEntities)
+                                    .foregroundStyle(.secondary)
 
+                                // ✅ NEU: Teaser aus Kursbeschreibung
                                 if let desc = e.course.description, !desc.isEmpty {
-                                    Text(desc.htmlToPlainText)
-                                        .font(.footnote)
+                                    Text(desc.htmlSummary(maxChars: 220))
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
-                                        .lineLimit(2)
+                                        .lineLimit(4)
                                 }
-                            }
+
+                                ProgressView(value: e.progressValue)                            }
                             .padding(.vertical, 4)
+                            .contentShape(Rectangle()) // ✅ gesamte Zeile tappbar
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("Meine Kurse")

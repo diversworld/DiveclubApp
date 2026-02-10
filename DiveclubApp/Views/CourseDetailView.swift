@@ -5,6 +5,7 @@
 //  Created by Eckhard Becker on 08.02.26.
 //
 
+
 import SwiftUI
 
 struct CourseDetailView: View {
@@ -99,9 +100,9 @@ struct CourseDetailView: View {
                 }
             }
 
+            // ✅ Kursbeschreibung: erst kurz, dann aufklappbar
             if let desc = vm.enrollment.course.description, !desc.isEmpty {
-                HTMLTextView(html: desc, textStyle: .footnote)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                ExpandableHTMLText(html: desc, textStyle: .footnote, collapsedLineLimit: 6)
                     .padding(.top, 2)
             }
 
@@ -169,12 +170,10 @@ struct CourseDetailView: View {
                 ForEach(vm.schedule) { item in
                     VStack(alignment: .leading, spacing: 6) {
 
-                        // ✅ Modul-Titel
                         Text(item.moduleTitle.decodedEntities)
                             .font(.headline)
 
                         HStack(alignment: .firstTextBaseline) {
-                            // ✅ Location
                             if let loc = item.location, !loc.isEmpty {
                                 Text(loc.decodedEntities)
                                     .foregroundStyle(.secondary)
@@ -182,7 +181,6 @@ struct CourseDetailView: View {
 
                             Spacer()
 
-                            // ✅ Datum (immer vorhanden)
                             Text(Self.formatDateTime(item.plannedAt))
                                 .foregroundStyle(.secondary)
                         }

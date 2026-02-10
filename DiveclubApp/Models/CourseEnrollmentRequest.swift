@@ -13,9 +13,13 @@
 //
 
 import Foundation
-import SwiftUI
 
-struct CourseEnrollmentRequest: Codable {
+struct CourseEnrollmentRequest: Encodable {
     let courseId: Int
     let eventId: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case courseId = "course_id"
+        case eventId  = "event_id"
+    }
 }

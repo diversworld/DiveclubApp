@@ -21,8 +21,7 @@ final class InstructorViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            // optional: nur laden, wenn Instructor
-            guard AuthManager.shared.currentMember?.isInstructor == true else {
+            guard AuthManager.shared.isInstructor else {
                 enrollments = []
                 return
             }

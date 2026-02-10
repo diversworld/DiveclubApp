@@ -9,16 +9,12 @@ import Foundation
 
 enum APIGuardError: LocalizedError {
     case forbidden
-    
-    var errorDescription: String? {
-        "Zugriff nicht erlaubt."
-    }
+    var errorDescription: String? { "Zugriff nicht erlaubt." }
 }
 
 struct APIGuard {
-    
     static func requireInstructor() throws {
-        guard AuthManager.shared.currentMember?.isInstructor == true else {
+        guard AuthManager.shared.isInstructor else {
             throw APIGuardError.forbidden
         }
     }

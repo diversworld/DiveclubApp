@@ -10,28 +10,24 @@ import Combine
 
 @MainActor
 final class EventsViewModel: ObservableObject {
+
     @Published var events: [EventDTO] = []
-    @Published var tankChecks: [TankCheckProposalDTO] = []
-    @Published var isLoading = false
-    @Published var error: String?
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
 
     func load() async {
+        guard !isLoading else { return }
+
         isLoading = true
-        error = nil
+        errorMessage = nil
         defer { isLoading = false }
 
         do {
-            async let eventsTask = APIClient.shared.getEvents()
-            async let tankChecksTask = APIClient.shared.getTankCheckProposals()
-
-            events = try await eventsTask
-
-            tankChecks = try await tankChecksTask
-                .filter { $0.published ?? true }
-                .sorted { ($0.proposalDate ?? .distantFuture) < ($1.proposalDate ?? .distantFuture) }
-
+            let result: [EventDTO] = try await APIClient.shared.getEvents()
+            self.events = result
         } catch {
-            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.events = []
         }
     }
 }

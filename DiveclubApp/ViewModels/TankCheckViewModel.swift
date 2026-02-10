@@ -1,8 +1,8 @@
 //
-//  TankChecksViewModel.swift
+//  MyCoursesView.swift
 //  DiveclubApp
 //
-//  Created by Eckhard Becker on 09.02.26.
+//  Created by Eckhard Becker on 07.02.26.
 //
 
 import Foundation
@@ -10,13 +10,14 @@ import Combine
 
 @MainActor
 final class TankCheckListViewModel: ObservableObject {
+
     @Published var proposals: [TankCheckProposalDTO] = []
     @Published var isLoading = false
-    @Published var error: String?
+    @Published var errorMessage: String?
 
     func load() async {
         isLoading = true
-        error = nil
+        errorMessage = nil
         defer { isLoading = false }
 
         do {
@@ -24,13 +25,18 @@ final class TankCheckListViewModel: ObservableObject {
                 .filter { $0.published ?? true }
                 .sorted { ($0.proposalDate ?? .distantFuture) < ($1.proposalDate ?? .distantFuture) }
         } catch {
-            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            if case APIError.badStatus(let code, _) = error, code == 401 {
+                errorMessage = "Bitte neu einloggen."
+            } else {
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            }
         }
     }
 }
 
 @MainActor
 final class TankCheckBookingViewModel: ObservableObject {
+
     @Published var isSubmitting = false
     @Published var error: String?
     @Published var successMessage: String?

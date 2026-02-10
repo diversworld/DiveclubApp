@@ -44,6 +44,9 @@ final class APIClient {
         config.timeoutIntervalForResource = 30
 
         self.session = URLSession(configuration: config)
+
+        // ✅ WICHTIG: snake_case -> camelCase (enrollment_id -> enrollmentId usw.)
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
 
     // MARK: - URL + Request
@@ -92,6 +95,13 @@ final class APIClient {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                #if DEBUG
+                print("❌ Decoding failed for type:", T.self)
+                print("⬅️ Raw response body:")
+                print(String(data: data, encoding: .utf8) ?? "<non-utf8 data>")
+                print("❌ Error:", error)
+                #endif
+
                 throw APIError.decoding(error)
             }
         } catch let e as APIError {
@@ -161,20 +171,6 @@ final class APIClient {
 
     // MARK: - Auth
 
-    func login(username: String, password: String) async throws -> MeDTO {
-        let payload = LoginPayload(username: username, password: password)
-        return try await request("/login", method: "POST", body: payload)
-    }
-
-    func logout() async throws {
-        try await requestWithoutResponse("/logout", method: "POST")
-        clearCookies()
-    }
-
-    func me() async throws -> MeDTO {
-        try await request("/me")
-    }
-
     func clearCookies() {
         let storage = HTTPCookieStorage.shared
         storage.cookies?.forEach { storage.deleteCookie($0) }
@@ -201,26 +197,37 @@ final class APIClient {
     }
 }
 
-// MARK: - Auth DTOs
+// MARK: - Auth Convenience (Member)
+
+extension APIClient {
+
+    private struct LoginResponseDTO: Decodable {
+        let success: Bool
+        let member: Member?
+    }
+
+    func login(username: String, password: String) async throws -> Member {
+        let req = LoginRequest(username: username, password: password)
+        let resp: LoginResponseDTO = try await request("login", method: "POST", body: req)
+
+        guard resp.success, let member = resp.member else {
+            throw APIError.badStatus(200, "Login fehlgeschlagen: success=false oder member fehlt.")
+        }
+        return member
+    }
+
+    func me() async throws -> Member {
+        try await request("me", method: "GET")
+    }
+
+    func logout() async throws {
+        try await requestWithoutResponse("logout", method: "POST")
+    }
+}
+
+// MARK: - Login Payload
 
 private struct LoginPayload: Codable {
     let username: String
     let password: String
-}
-
-struct MeDTO: Codable, Equatable {
-    let id: String?
-    let username: String?
-    let firstname: String?
-    let lastname: String?
-    let email: String?
-    let role: String?
-
-    var fullName: String {
-        [firstname, lastname].compactMap { $0 }.joined(separator: " ").trimmingCharacters(in: .whitespaces)
-    }
-
-    var isInstructor: Bool {
-        (role ?? "").lowercased().contains("instructor")
-    }
 }

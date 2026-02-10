@@ -10,124 +10,108 @@ import UIKit
 #elseif canImport(AppKit)
 import AppKit
 #endif
+
 import Foundation
 
 extension String {
 
+    /// HTML -> Plain Text (mit Absätzen + Bulletpoints)
     var htmlToPlainText: String {
-        if isEmpty { return self }
+        // 1) erst Entities decodieren (du hast decodedEntities in String+Entities.swift)
+        var s = self.decodedEntities
 
-        var s = self
+        // 2) Zeilenumbrüche/Block-Struktur grob abbilden
+        // Paragraphs / breaks
+        s = s.replacingOccurrences(of: "(?i)<br\\s*/?>", with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)</p\\s*>", with: "\n\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<p\\b[^>]*>", with: "", options: .regularExpression)
 
-        // 1) harte Zeilenumbrüche / Absatzende
-        let blockBreaks = [
-            "(?i)<br\\s*/?>",
-            "(?i)</p\\s*>",
-            "(?i)</div\\s*>",
-            "(?i)</h[1-6]\\s*>",
-            "(?i)</tr\\s*>",
-            "(?i)</ul\\s*>",
-            "(?i)</ol\\s*>"
-        ]
-        for p in blockBreaks {
-            s = s.replacingRegex(p, with: "\n")
-        }
+        // Headings -> extra Abstand
+        s = s.replacingOccurrences(of: "(?i)</h[1-6]\\s*>", with: "\n\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<h[1-6]\\b[^>]*>", with: "\n", options: .regularExpression)
 
-        // 2) Listenanfänge auch auf neue Zeile
-        s = s.replacingRegex("(?i)<ul\\b[^>]*>", with: "\n")
-        s = s.replacingRegex("(?i)<ol\\b[^>]*>", with: "\n")
+        // Divs -> nur Abstand, Inhalt bleibt
+        s = s.replacingOccurrences(of: "(?i)</div\\s*>", with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<div\\b[^>]*>", with: "", options: .regularExpression)
 
-        // 3) List items: immer in neue Zeile
-        s = s.replacingRegex("(?i)<li\\b[^>]*>", with: "\n• ")
-        s = s.replacingRegex("(?i)</li\\s*>", with: "\n")
+        // Lists:
+        // UL bullets
+        s = s.replacingOccurrences(of: "(?i)</ul\\s*>", with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<ul\\b[^>]*>", with: "\n", options: .regularExpression)
 
-        // 4) restliche Tags entfernen
-        s = s.replacingRegex("<[^>]+>", with: "")
+        // OL numbering (heuristisch):
+        // Wir markieren <li> erstmal, nummerieren später pro Block.
+        s = s.replacingOccurrences(of: "(?i)</ol\\s*>", with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<ol\\b[^>]*>", with: "\n[[OL_START]]\n", options: .regularExpression)
 
-        // 5) Entities decoden
-        s = s.decodingHTMLEntitiesFoundationOnly()
+        // li
+        s = s.replacingOccurrences(of: "(?i)</li\\s*>", with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: "(?i)<li\\b[^>]*>", with: "• ", options: .regularExpression)
 
-        // 6) Normalisieren (Leerzeichen/Zeilen)
-        s = s.replacingRegex("\r", with: "")
-        s = s.replacingRegex("[ \\t\\f\\v]+", with: " ")
-        s = s.replacingRegex("[ ]*\\n[ ]*", with: "\n")   // spaces um newlines weg
-        s = s.replacingRegex("\\n{3,}", with: "\n\n")     // max 2 newlines
-        s = s.replacingRegex("\\n•\\s*\\n", with: "\n")   // leere bullets raus
+        // 3) Alle restlichen Tags weg
+        s = s.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
 
-        // 7) Bullet-Kanten glätten: wenn direkt nach Text ein Bullet kommt -> Absatz
-        s = s.replacingRegex("([^\\n])\\n•", with: "$1\n\n•")
+        // 4) OL Nummerierung nachträglich erzeugen
+        // Jede [[OL_START]] Sektion: ersetze die dortigen "• " Zeilen durch "1. ", "2. " ...
+        s = applySimpleOrderedListNumbering(s)
 
-        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 5) Whitespace aufräumen
+        s = s.replacingOccurrences(of: "\r\n", with: "\n")
+        s = s.replacingOccurrences(of: "\r", with: "\n")
+
+        // Mehrfach-Leerzeilen reduzieren
+        s = s.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+
+        // trailing spaces je Zeile entfernen
+        s = s
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return s
     }
 
-    // MARK: - Entity decoding (Foundation-only)
+    /// Kurzer Teaser aus HTML (für Listen/Karten)
+    func htmlSummary(maxChars: Int = 220) -> String {
+        let plain = self.htmlToPlainText
+        if plain.count <= maxChars { return plain }
 
-    private func decodingHTMLEntitiesFoundationOnly() -> String {
-        if isEmpty { return self }
-        var out = self
-
-        let named: [String: String] = [
-            "&amp;": "&",
-            "&lt;": "<",
-            "&gt;": ">",
-            "&quot;": "\"",
-            "&apos;": "'",
-            "&#39;": "'",
-            "&#34;": "\"",
-            "&nbsp;": " "
-        ]
-        for (k, v) in named {
-            out = out.replacingOccurrences(of: k, with: v)
+        // schöner cut: bis zum letzten Leerzeichen
+        let idx = plain.index(plain.startIndex, offsetBy: maxChars)
+        let prefix = String(plain[..<idx])
+        if let lastSpace = prefix.lastIndex(of: " ") {
+            return String(prefix[..<lastSpace]).trimmingCharacters(in: .whitespacesAndNewlines) + " …"
         }
-
-        out = out.replacingRegexMatches("&#(\\d+);") { full, groups in
-            guard let codeStr = groups.first, let code = Int(codeStr),
-                  let scalar = UnicodeScalar(code) else { return full }
-            return String(scalar)
-        }
-
-        out = out.replacingRegexMatches("&#x([0-9a-fA-F]+);") { full, groups in
-            guard let hex = groups.first, let code = Int(hex, radix: 16),
-                  let scalar = UnicodeScalar(code) else { return full }
-            return String(scalar)
-        }
-
-        return out
-    }
-}
-
-// MARK: - Regex helpers
-
-private extension String {
-
-    func replacingRegex(_ pattern: String, with replacement: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return self }
-        let range = NSRange(startIndex..<endIndex, in: self)
-        return regex.stringByReplacingMatches(in: self, options: [], range: range, withTemplate: replacement)
+        return prefix.trimmingCharacters(in: .whitespacesAndNewlines) + " …"
     }
 
-    func replacingRegexMatches(
-        _ pattern: String,
-        replacer: (_ fullMatch: String, _ captureGroups: [String]) -> String
-    ) -> String {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return self }
+    // MARK: - helper
 
-        let ns = self as NSString
-        let matches = regex.matches(in: self, options: [], range: NSRange(location: 0, length: ns.length))
-        if matches.isEmpty { return self }
+    private func applySimpleOrderedListNumbering(_ input: String) -> String {
+        // Wir splitten in Blöcke an [[OL_START]]
+        let parts = input.components(separatedBy: "[[OL_START]]")
+        guard parts.count > 1 else { return input }
 
-        var result = self
-        for m in matches.reversed() {
-            let full = ns.substring(with: m.range(at: 0))
-            var groups: [String] = []
-            if m.numberOfRanges > 1 {
-                for i in 1..<m.numberOfRanges {
-                    let r = m.range(at: i)
-                    groups.append(r.location != NSNotFound ? ns.substring(with: r) : "")
+        var result = parts[0]
+        for i in 1..<parts.count {
+            var block = parts[i]
+
+            // Nummeriere Zeilen, die mit "• " starten, bis zum nächsten Leerblock (oder Blockende)
+            var lines = block.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            var n = 1
+            for idx in 0..<lines.count {
+                let line = lines[idx].trimmingCharacters(in: .whitespaces)
+                if line.hasPrefix("• ") {
+                    // nur in diesem OL-Block nummerieren
+                    let content = line.dropFirst(2) // "• "
+                    lines[idx] = "\(n). \(content)"
+                    n += 1
                 }
             }
-            let replacement = replacer(full, groups)
-            result = (result as NSString).replacingCharacters(in: m.range(at: 0), with: replacement)
+
+            block = lines.joined(separator: "\n")
+            result += block
         }
         return result
     }

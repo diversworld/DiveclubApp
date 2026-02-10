@@ -5,35 +5,43 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
+//
+//  AuthManager.swift
+//  DiveclubApp
+//
+//  Created by Eckhard Becker on 07.02.26.
+//
+
 import Foundation
-import SwiftUI
 import Combine
 
 @MainActor
 final class AuthManager: ObservableObject {
     static let shared = AuthManager()
 
-    @Published private(set) var me: MeDTO?
+    @Published private(set) var currentMember: Member? = nil
     @Published private(set) var isLoading: Bool = false
     @Published var errorMessage: String?
 
     private init() {}
 
-    var isLoggedIn: Bool { me != nil }
-    var isInstructor: Bool { me?.isInstructor == true }
-    var currentMember: MeDTO? { me }
+    var isLoggedIn: Bool { currentMember != nil }
+    var isInstructor: Bool { currentMember?.isInstructor == true }
 
+    /// Beim App-Start: bestehende Session prüfen
     func bootstrap() async {
-        // Beim App-Start: bestehende Session prüfen
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            me = try await APIClient.shared.me()
+            currentMember = try await APIClient.shared.me()
+            // ✅ Badge/Counts laden
+            await EnrollmentStore.shared.refresh()
         } catch {
-            // Wenn keine Session: me bleibt nil (kein Fehler-Toast nötig)
-            me = nil
+            // Wenn keine Session: kein Fehler-Toast nötig
+            currentMember = nil
+            EnrollmentStore.shared.clear()
         }
     }
 
@@ -43,11 +51,14 @@ final class AuthManager: ObservableObject {
         defer { isLoading = false }
 
         do {
-            me = try await APIClient.shared.login(username: username, password: password)
+            currentMember = try await APIClient.shared.login(username: username, password: password)
+            // ✅ Badge/Counts laden
+            await EnrollmentStore.shared.refresh()
             return true
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            me = nil
+            currentMember = nil
+            EnrollmentStore.shared.clear()
             return false
         }
     }
@@ -64,7 +75,11 @@ final class AuthManager: ObservableObject {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
 
-        me = nil
+        currentMember = nil
+        EnrollmentStore.shared.clear()
+
+        // optional: Cookies löschen, wenn du Session hart resetten willst
+        APIClient.shared.clearCookies()
     }
 
     func refreshMe() async {
@@ -73,7 +88,8 @@ final class AuthManager: ObservableObject {
         defer { isLoading = false }
 
         do {
-            me = try await APIClient.shared.me()
+            currentMember = try await APIClient.shared.me()
+            await EnrollmentStore.shared.refresh()
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

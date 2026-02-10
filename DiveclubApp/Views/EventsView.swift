@@ -5,56 +5,75 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
+//
+//  EventsView.swift
+//  DiveclubApp
+//
+
 import SwiftUI
-import Combine
 
 struct EventsView: View {
+
     @StateObject private var vm = EventsViewModel()
 
     var body: some View {
-        List {
+        Group {
             if vm.isLoading {
-                ProgressView("Lade Events …")
-            }
-            if let err = vm.error {
-                Text(err).foregroundStyle(.red)
-            }
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Deine bestehenden Events
-            Section("Events") {
-                ForEach(vm.events) { e in
-                    Text(e.title)
-                }
-            }
+            } else if let err = vm.errorMessage {
+                ContentUnavailableView(
+                    "Fehler",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(err)
+                )
 
-            // TÜV Section aus Tank-Checks
-            Section("TÜV (geplante Prüfungen)") {
-                if vm.tankChecks.isEmpty && !vm.isLoading {
-                    Text("Aktuell kein TÜV-Termin geplant.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(vm.tankChecks) { p in
-                        NavigationLink {
-                            TankCheckDetailView(proposalId: p.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(p.title ?? "TÜV-Prüfung").font(.headline)
-                                if let d = p.proposalDate {
-                                    Text(d, style: .date)
-                                } else {
-                                    Text("Datum folgt").foregroundStyle(.secondary)
-                                }
-                                if let vendor = p.vendorName, !vendor.isEmpty {
-                                    Text(vendor).font(.footnote).foregroundStyle(.secondary)
-                                }
+            } else if vm.events.isEmpty {
+                ContentUnavailableView(
+                    "Keine Events",
+                    systemImage: "calendar",
+                    description: Text("Aktuell keine Events vorhanden.")
+                )
+
+            } else {
+                List(vm.events) { event in
+                    NavigationLink {
+                        // ⚠️ WICHTIG:
+                        // Falls dein EventDetailView aktuell `Event` erwartet, ändere es
+                        // auf `EventDTO` ODER erstelle einen Adapter.
+                        EventDetailView(eventId: event.id)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(event.title.decodedEntities)
+                                .font(.headline)
+
+                            if let loc = event.location, !loc.isEmpty {
+                                Text(loc.decodedEntities)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let ts = event.dateStart {
+                                Text(Self.formatDateTime(ts))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
                             }
                         }
+                        .padding(.vertical, 4)
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
-        .navigationTitle("Events")
         .task { await vm.load() }
         .refreshable { await vm.load() }
+    }
+
+    private static func formatDateTime(_ unix: Int) -> String {
+        let d = Date(timeIntervalSince1970: TimeInterval(unix))
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f.string(from: d)
     }
 }

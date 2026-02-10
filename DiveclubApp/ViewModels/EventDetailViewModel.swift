@@ -10,95 +10,88 @@ import Combine
 
 @MainActor
 final class EventDetailViewModel: ObservableObject {
-    
+
     @Published var event: Event?
     @Published var isLoading = false
     @Published var isSubmitting = false
     @Published var errorMessage: String?
     @Published var bookingSuccess = false
     @Published var isAlreadyBooked = false
-    
+
     private let enrollmentStore = EnrollmentStore.shared
-    
+
     // MARK: - Load Event
-    
+
     func loadEvent(id: Int) async {
         isLoading = true
         errorMessage = nil
-        
-        do {
-            let loadedEvent: Event =
-                try await APIClient.shared.request("events/\(id)")
-            
-            self.event = loadedEvent
-            
-            // Prüfen ob User bereits angemeldet ist
-            await EnrollmentStore.shared.load()
+        defer { isLoading = false }
 
-            isAlreadyBooked = EnrollmentStore.shared.isEnrolled(eventId: id)
-            
+        do {
+            let loadedEvent: Event = try await APIClient.shared.request("/events/\(id)")
+            self.event = loadedEvent
+
+            // Prüfen ob User bereits angemeldet ist
+            await enrollmentStore.load()
+            isAlreadyBooked = enrollmentStore.isEnrolled(eventId: id)
+
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-        
-        isLoading = false
     }
-    
+
     // MARK: - Anmeldung
-    
+
     func enroll() async {
         guard let event else { return }
 
-        guard !EnrollmentStore.shared.isEnrolled(eventId: event.id) else {
+        // schon gebucht?
+        if enrollmentStore.isEnrolled(eventId: event.id) {
             isAlreadyBooked = true
             return
         }
-        
-        guard !isAlreadyBooked else {
-                errorMessage = "Du bist bereits angemeldet."
-                return
-            }
+        if isAlreadyBooked {
+            errorMessage = "Du bist bereits angemeldet."
+            return
+        }
         guard !isSubmitting else { return }
-        
+
         guard let courseId = event.courseId else {
             errorMessage = "Keine Kurs-ID vorhanden."
             return
         }
-        
+
         isSubmitting = true
         errorMessage = nil
+        bookingSuccess = false
         defer { isSubmitting = false }
-        
+
         do {
-            let request = CourseEnrollmentRequest(
-                courseId: courseId,
-                eventId: event.id
-            )
-            
-            let body = try JSONEncoder().encode(request)
-            
+            let request = CourseEnrollmentRequest(courseId: courseId, eventId: event.id)
+
+            // ✅ WICHTIG: Encodable direkt senden (nicht vorher JSONEncoder().encode)
             try await APIClient.shared.requestWithoutResponse(
-                "courses/enroll",
+                "/courses/enroll",
                 method: "POST",
-                body: body
+                body: request
             )
-            
+
             // 🔄 Global synchronisieren
             await enrollmentStore.load()
-            
-            // 🔄 Event neu laden (für Teilnehmerzahl)
+
+            // 🔄 Event neu laden (für Teilnehmerzahl etc.)
             await loadEvent(id: event.id)
-            
+
             bookingSuccess = true
             isAlreadyBooked = true
-            
+
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
-    
-    // MARK: - Warteliste
-    
+
+    // MARK: - Warteliste / Ausgebucht
+
     var isFull: Bool {
         guard let current = event?.currentParticipants,
               let max = event?.maxParticipants else { return false }
