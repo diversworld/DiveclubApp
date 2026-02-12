@@ -5,6 +5,7 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
+
 import Foundation
 
 /// /api/events/{id}
@@ -15,6 +16,7 @@ struct Event: Identifiable, Decodable, Equatable {
     let description: String?
 
     let location: String?
+    let price: String?
 
     let courseId: Int?
 
@@ -29,17 +31,23 @@ struct Event: Identifiable, Decodable, Equatable {
         case title
         case description
         case location
+        case price
 
+        // course id
         case courseId = "course_id"
+        case courseIdCamel = "courseId"
 
-        case currentParticipants = "current_participants"
-        case maxParticipants = "max_participants"
+        // participants
+        case currentParticipants
+        case currentParticipantsSnake = "current_participants"
+        case maxParticipants
+        case maxParticipantsSnake = "max_participants"
 
-        // je nach Backend: "dateStart"/"dateEnd" oder snake_case
+        // dates
         case dateStart
+        case dateStartSnake = "date_start"
         case dateEnd
-        case date_start
-        case date_end
+        case dateEndSnake = "date_end"
     }
 
     init(from decoder: Decoder) throws {
@@ -47,33 +55,45 @@ struct Event: Identifiable, Decodable, Equatable {
 
         id = try c.decode(Int.self, forKey: .id)
         title = (try? c.decode(String.self, forKey: .title)) ?? "Event"
-        description = try? c.decodeIfPresent(String.self, forKey: .description)
-        location = try? c.decodeIfPresent(String.self, forKey: .location)
+        description = try c.decodeIfPresent(String.self, forKey: .description)
 
-        courseId = try? c.decodeIfPresent(Int.self, forKey: .courseId)
+        location = try c.decodeIfPresent(String.self, forKey: .location)
+        price = try c.decodeIfPresent(String.self, forKey: .price)
 
-        currentParticipants = try? c.decodeIfPresent(Int.self, forKey: .currentParticipants)
-        maxParticipants = try? c.decodeIfPresent(Int.self, forKey: .maxParticipants)
+        courseId = Self.decodeInt(from: c, keys: [.courseId, .courseIdCamel])
 
-        // tolerant: akzeptiert Int unix timestamp oder ISO-String (falls mal so)
-        func decodeDate(_ keys: [CodingKeys]) -> Date? {
-            for k in keys {
-                if let intVal = try? c.decodeIfPresent(Int.self, forKey: k) {
-                    return Date(timeIntervalSince1970: TimeInterval(intVal))
-                }
-                if let strVal = try? c.decodeIfPresent(String.self, forKey: k) {
-                    if let intFromStr = Int(strVal) {
-                        return Date(timeIntervalSince1970: TimeInterval(intFromStr))
-                    }
-                    // ISO8601 fallback
-                    let iso = ISO8601DateFormatter()
-                    if let d = iso.date(from: strVal) { return d }
-                }
-            }
-            return nil
+        currentParticipants = Self.decodeInt(from: c, keys: [.currentParticipants, .currentParticipantsSnake])
+        maxParticipants = Self.decodeInt(from: c, keys: [.maxParticipants, .maxParticipantsSnake])
+
+        dateStart = Self.decodeDate(from: c, keys: [.dateStart, .dateStartSnake])
+        dateEnd = Self.decodeDate(from: c, keys: [.dateEnd, .dateEndSnake])
+    }
+
+    // MARK: - Helpers
+
+    private static func decodeInt(from c: KeyedDecodingContainer<CodingKeys>, keys: [CodingKeys]) -> Int? {
+        for k in keys {
+            if let v = try? c.decodeIfPresent(Int.self, forKey: k) { return v }
+            if let s = try? c.decodeIfPresent(String.self, forKey: k), let v = Int(s) { return v }
         }
+        return nil
+    }
 
-        dateStart = decodeDate([.dateStart, .date_start])
-        dateEnd = decodeDate([.dateEnd, .date_end])
+    private static func decodeDate(from c: KeyedDecodingContainer<CodingKeys>, keys: [CodingKeys]) -> Date? {
+        for k in keys {
+            // unix int
+            if let intVal = try? c.decodeIfPresent(Int.self, forKey: k) {
+                return Date(timeIntervalSince1970: TimeInterval(intVal))
+            }
+            // unix string oder iso string
+            if let strVal = try? c.decodeIfPresent(String.self, forKey: k) {
+                if let intFromStr = Int(strVal) {
+                    return Date(timeIntervalSince1970: TimeInterval(intFromStr))
+                }
+                let iso = ISO8601DateFormatter()
+                if let d = iso.date(from: strVal) { return d }
+            }
+        }
+        return nil
     }
 }

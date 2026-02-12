@@ -25,7 +25,8 @@ class AppSettingsManager: ObservableObject {
         // BaseURL laden
         self.baseURL =
             UserDefaults.standard.string(forKey: "baseURL")
-            ?? "https://contao56.ddev.site/api"
+            ?? "https://contao56.ddev.site"
+            //?? "https://neu.duc-darmstadt.de"
     }
     
     // MARK: - Persistenz

@@ -52,3 +52,10 @@ struct EnrollmentRow: View {
             .clipShape(Capsule())
     }
 }
+
+extension Enrollment {
+    var isRegistered: Bool { reservationStatus == "registered" }
+    var isActive: Bool { reservationStatus == "active" }
+    var isCompleted: Bool { reservationStatus == "completed" }
+    var isRejected: Bool { reservationStatus == "dropped" || reservationStatus == "rejected" }
+}

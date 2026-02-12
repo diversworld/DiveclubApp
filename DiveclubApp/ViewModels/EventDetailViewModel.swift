@@ -19,6 +19,17 @@ final class EventDetailViewModel: ObservableObject {
     @Published var isAlreadyBooked = false
 
     private let enrollmentStore = EnrollmentStore.shared
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // ✅ Immer wenn sich Enrollments ändern: isAlreadyBooked neu berechnen
+        enrollmentStore.$enrollments
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.recomputeAlreadyBooked()
+            }
+            .store(in: &cancellables)
+    }
 
     // MARK: - Load Event
 
@@ -31,9 +42,14 @@ final class EventDetailViewModel: ObservableObject {
             let loadedEvent: Event = try await APIClient.shared.request("/events/\(id)")
             self.event = loadedEvent
 
-            // Prüfen ob User bereits angemeldet ist
+            // ✅ Erstmal anhand der aktuell vorhandenen Daten entscheiden
+            recomputeAlreadyBooked()
+
+            // ✅ Dann Store aktualisieren (kann async/parallel passieren)
             await enrollmentStore.load()
-            isAlreadyBooked = enrollmentStore.isEnrolled(eventId: id)
+
+            // ✅ Danach nochmal sicher neu berechnen
+            recomputeAlreadyBooked()
 
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -45,7 +61,7 @@ final class EventDetailViewModel: ObservableObject {
     func enroll() async {
         guard let event else { return }
 
-        // schon gebucht?
+        // ✅ Immer frisch prüfen (nicht nur auf isAlreadyBooked verlassen)
         if enrollmentStore.isEnrolled(eventId: event.id) {
             isAlreadyBooked = true
             return
@@ -69,21 +85,21 @@ final class EventDetailViewModel: ObservableObject {
         do {
             let request = CourseEnrollmentRequest(courseId: courseId, eventId: event.id)
 
-            // ✅ WICHTIG: Encodable direkt senden (nicht vorher JSONEncoder().encode)
             try await APIClient.shared.requestWithoutResponse(
                 "/courses/enroll",
                 method: "POST",
                 body: request
             )
 
-            // 🔄 Global synchronisieren
+            // 🔄 Store synchronisieren
             await enrollmentStore.load()
 
-            // 🔄 Event neu laden (für Teilnehmerzahl etc.)
-            await loadEvent(id: event.id)
-
-            bookingSuccess = true
+            // ✅ UI-Status sofort korrekt setzen
             isAlreadyBooked = true
+            bookingSuccess = true
+
+            // 🔄 Event neu laden (Teilnehmerzahlen etc.)
+            await loadEvent(id: event.id)
 
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -96,5 +112,15 @@ final class EventDetailViewModel: ObservableObject {
         guard let current = event?.currentParticipants,
               let max = event?.maxParticipants else { return false }
         return current >= max
+    }
+
+    // MARK: - Helpers
+
+    private func recomputeAlreadyBooked() {
+        guard let id = event?.id else {
+            isAlreadyBooked = false
+            return
+        }
+        isAlreadyBooked = enrollmentStore.isEnrolled(eventId: id)
     }
 }

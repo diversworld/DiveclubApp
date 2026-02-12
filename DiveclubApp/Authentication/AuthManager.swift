@@ -28,6 +28,11 @@ final class AuthManager: ObservableObject {
     var isLoggedIn: Bool { currentMember != nil }
     var isInstructor: Bool { currentMember?.isInstructor == true }
 
+    var currentMemberIdInt: Int? {
+            guard let id = currentMember?.id else { return nil }
+            return Int(id)
+        }
+    
     /// Beim App-Start: bestehende Session prüfen
     func bootstrap() async {
         isLoading = true

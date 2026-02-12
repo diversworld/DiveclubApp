@@ -50,7 +50,7 @@ struct MyCoursesView: View {
 
                                 // ✅ NEU: Teaser aus Kursbeschreibung
                                 if let desc = e.course.description, !desc.isEmpty {
-                                    Text(desc.htmlSummary(maxChars: 220))
+                                    Text(desc.htmlSummary(maxChars: 300))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(4)

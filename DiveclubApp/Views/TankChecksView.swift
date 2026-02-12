@@ -5,12 +5,6 @@
 //  Created by Eckhard Becker on 09.02.26.
 //
 
-//
-//  TankChecksView.swift
-//  DiveclubApp
-//
-//  Created by Eckhard Becker on 09.02.26.
-//
 
 import SwiftUI
 

@@ -28,9 +28,6 @@ enum APIError: Error, LocalizedError {
 final class APIClient {
     static let shared = APIClient()
 
-    /// Base URL eurer Site (z.B. https://contao56.ddev.site)
-    var baseURL: URL = URL(string: "https://contao56.ddev.site")!
-
     private let session: URLSession
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
@@ -47,6 +44,14 @@ final class APIClient {
 
         // ✅ WICHTIG: snake_case -> camelCase (enrollment_id -> enrollmentId usw.)
         decoder.keyDecodingStrategy = .convertFromSnakeCase
+    }
+    
+    // Base URL eurer Site (z.B. https://contao56.ddev.site)
+    //var baseURL: URL = URL(string: "https://contao56.ddev.site")!
+
+    var baseURL: URL {
+        let s = AppSettingsManager.shared.baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        return URL(string: s) ?? URL(string: "https://contao56.ddev.site")!
     }
 
     // MARK: - URL + Request
@@ -92,6 +97,11 @@ final class APIClient {
             guard (200...299).contains(http.statusCode) else {
                 throw APIError.badStatus(http.statusCode, bodyString(data))
             }
+            #if DEBUG
+            print("➡️ \(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "<nil>")")
+            print("⬅️ status:", http.statusCode)
+            if let s = String(data: data, encoding: .utf8) { print("⬅️ body:", s) }
+            #endif
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -222,6 +232,21 @@ extension APIClient {
 
     func logout() async throws {
         try await requestWithoutResponse("logout", method: "POST")
+    }
+    
+    // GET /api/reservations
+    func getReservations() async throws -> [EquipmentReservation] {
+        try await request("reservations", method: "GET")
+    }
+
+    // GET /api/reservations/{id}
+    func getReservation(id: Int) async throws -> EquipmentReservation {
+        try await request("reservations/\(id)", method: "GET")
+    }
+
+    // POST /api/reservations
+    func createReservation(_ payload: CreateReservationRequest) async throws -> CreateReservationResponse {
+        try await request("reservations", method: "POST", body: payload)
     }
 }
 

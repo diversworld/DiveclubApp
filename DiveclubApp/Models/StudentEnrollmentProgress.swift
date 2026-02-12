@@ -5,35 +5,47 @@
 //  Created by Eckhard Becker on 08.02.26.
 //
 
+
 import Foundation
+
+// MARK: - Generic helper (works with any CodingKeys)
+
+private func decodeInt<K: CodingKey>(_ c: KeyedDecodingContainer<K>, forKey key: K) -> Int? {
+    if let v = try? c.decodeIfPresent(Int.self, forKey: key) { return v }
+    if let s = try? c.decodeIfPresent(String.self, forKey: key) { return Int(s) }
+    return nil
+}
+
+// MARK: - StudentEnrollmentProgress
 
 struct StudentEnrollmentProgress: Identifiable, Decodable, Equatable {
 
-    // Top-Level
     let id: Int
     let enrollmentId: Int?
     let enrollment: EnrollmentInfo?
     let course: CourseInfo
     let exercises: [StudentExercise]
 
-    // ✅ Wichtig: wir liefern immer eine eventId zurück, wenn irgendwo vorhanden
+    /// ✅ Event-ID kann entweder top-level oder in enrollment stecken.
     var eventId: Int? {
-        // 1) falls später mal direkt am Top-Level geliefert wird (event_id)
         if let top = _eventId { return top }
-        // 2) so kommt es bei dir aus /api/progress: enrollment.event_id
         return enrollment?.eventId
     }
 
-    /// interner Storage für optionales Top-Level event_id
     private let _eventId: Int?
 
     enum CodingKeys: String, CodingKey {
         case id
+
         case enrollmentId
+        case enrollment_id
+
         case enrollment
         case course
         case exercises
-        case _eventId = "eventId"
+
+        case eventId
+        case event_id
     }
 
     init(from decoder: Decoder) throws {
@@ -41,16 +53,17 @@ struct StudentEnrollmentProgress: Identifiable, Decodable, Equatable {
 
         id = try c.decode(Int.self, forKey: .id)
 
-        // enrollment_id kann bei dir vorhanden sein
-        enrollmentId = try c.decodeIfPresent(Int.self, forKey: .enrollmentId)
+        enrollmentId =
+            decodeInt(c, forKey: .enrollmentId)
+            ?? decodeInt(c, forKey: .enrollment_id)
 
         enrollment = try c.decodeIfPresent(EnrollmentInfo.self, forKey: .enrollment)
-
         course = try c.decode(CourseInfo.self, forKey: .course)
         exercises = try c.decodeIfPresent([StudentExercise].self, forKey: .exercises) ?? []
 
-        // optionales Top-Level eventId (falls du es irgendwo lieferst)
-        _eventId = try c.decodeIfPresent(Int.self, forKey: ._eventId)
+        _eventId =
+            decodeInt(c, forKey: .event_id)
+            ?? decodeInt(c, forKey: .eventId)
     }
 }
 
@@ -72,15 +85,35 @@ struct EnrollmentInfo: Decodable, Equatable {
     let id: Int
     let eventId: Int?
 
-    // weitere Felder optional (wenn du sie brauchst)
     let status: String?
     let courseId: Int?
 
     enum CodingKeys: String, CodingKey {
         case id
+
         case eventId
+        case event_id
+
         case status
+
         case courseId
+        case course_id
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try c.decode(Int.self, forKey: .id)
+
+        eventId =
+            decodeInt(c, forKey: .eventId)
+            ?? decodeInt(c, forKey: .event_id)
+
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+
+        courseId =
+            decodeInt(c, forKey: .courseId)
+            ?? decodeInt(c, forKey: .course_id)
     }
 }
 
@@ -99,9 +132,33 @@ struct StudentExercise: Identifiable, Decodable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id
+
         case exerciseId
+        case exercise_id
+
         case status
+
         case dateCompleted
+        case date_completed
+
         case title
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try c.decode(Int.self, forKey: .id)
+
+        exerciseId =
+            decodeInt(c, forKey: .exerciseId)
+            ?? decodeInt(c, forKey: .exercise_id)
+
+        status = (try? c.decode(String.self, forKey: .status)) ?? ""
+
+        dateCompleted =
+            decodeInt(c, forKey: .dateCompleted)
+            ?? decodeInt(c, forKey: .date_completed)
+
+        title = try c.decodeIfPresent(String.self, forKey: .title)
     }
 }

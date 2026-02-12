@@ -16,6 +16,16 @@ struct LoginView: View {
     @StateObject private var auth = AuthManager.shared
     
     var body: some View {
+        VStack(spacing: 12) {
+            Image("Diversworld")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 90, height: 90)
+
+            Text("Diveclub")
+                .font(.title.bold())
+        }
+        .padding(.bottom, 20)
         VStack(spacing: 20) {
             
             Text("Diveclub Login")
@@ -37,6 +47,17 @@ struct LoginView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
+            .navigationTitle("Login")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SettingsView()
+                            .navigationTitle("Einstellungen")
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
             
             if let errorMessage {
                 Text(errorMessage)

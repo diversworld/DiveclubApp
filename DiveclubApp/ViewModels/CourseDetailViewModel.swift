@@ -31,24 +31,37 @@ final class CourseDetailViewModel: ObservableObject {
     func loadHeader() async {
         guard !isLoadingHeader else { return }
 
-        headerError = nil
-        isLoadingHeader = true
-        defer { isLoadingHeader = false }
+        await MainActor.run {
+            headerError = nil
+            isLoadingHeader = true
+        }
+        defer {
+            Task { @MainActor in
+                self.isLoadingHeader = false
+            }
+        }
 
         guard let eventId = enrollment.eventId else {
-            headerError = "Kein event_id vorhanden."
-            eventDetail = nil
+            await MainActor.run {
+                self.headerError = "Kein event_id vorhanden."
+                self.eventDetail = nil
+            }
             return
         }
 
         do {
             let e: EventDetail = try await APIClient.shared.request("/events/\(eventId)")
-            eventDetail = e
+            await MainActor.run {
+                self.eventDetail = e
+            }
         } catch {
-            headerError = Self.describe(error)
-            eventDetail = nil
+            await MainActor.run {
+                self.headerError = Self.describe(error)
+                self.eventDetail = nil
+            }
         }
     }
+
 
     /// Lädt Terminplan nur bei Bedarf
     func loadScheduleIfNeeded() async {

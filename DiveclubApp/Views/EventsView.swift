@@ -5,10 +5,6 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
-//
-//  EventsView.swift
-//  DiveclubApp
-//
 
 import SwiftUI
 

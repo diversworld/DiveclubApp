@@ -5,15 +5,6 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
-//
-//  Member.swift
-//  DiveclubApp
-//
-
-//
-//  Member.swift
-//  DiveclubApp
-//
 
 import Foundation
 

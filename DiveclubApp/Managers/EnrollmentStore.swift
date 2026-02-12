@@ -25,24 +25,22 @@ final class EnrollmentStore: ObservableObject {
     }
 
     func refresh() async {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+            guard !isLoading else { return }
+            isLoading = true
+            errorMessage = nil
+            defer { isLoading = false }
 
-        do {
-            let result: [Enrollment] = try await APIClient.shared.request("enrollments")
-            enrollments = result
-        } catch {
-            errorMessage = error.localizedDescription
-            enrollments = []
+            do {
+                let result: [Enrollment] = try await APIClient.shared.request("enrollments")
+                enrollments = result
+            } catch {
+                errorMessage = error.localizedDescription
+                enrollments = []
+            }
         }
-    }
 
-    /// Legacy-Name (falls alter Code drauf zugreift)
-    func load() async {
-        await refresh()
-    }
+        /// Alt-Kompatibilität
+        func load() async { await refresh() }
 
     func clear() {
         enrollments = []
@@ -53,6 +51,7 @@ final class EnrollmentStore: ObservableObject {
     func isEnrolled(eventId: Int) -> Bool {
         enrollments.contains(where: { $0.eventId == eventId })
     }
+
 
     func isEnrolled(enrollmentId: Int) -> Bool {
         enrollments.contains(where: { $0.id == enrollmentId })

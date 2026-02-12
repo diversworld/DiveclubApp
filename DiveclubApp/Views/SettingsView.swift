@@ -31,7 +31,6 @@ struct SettingsView: View {
             }
 
             Section("Server") {
-
                 TextField("API Base URL", text: $tempURL)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
@@ -42,12 +41,11 @@ struct SettingsView: View {
                         .foregroundColor(.red)
                         .font(.caption)
                 }
-
-                Button("Speichern") {
-                    saveURL()
+                
+                Button("Übernehmen") {
+                    settings.updateBaseURL(tempURL)
                 }
                 .disabled(!settings.isValidURL(tempURL))
-
                 Divider()
 
                 Button {
@@ -68,6 +66,15 @@ struct SettingsView: View {
                 }
                 .disabled(!settings.isValidURL(tempURL) || isTesting)
             }
+            .onAppear {
+                tempURL = settings.baseURL
+            }
+                
+            Section("Rechtliches") {
+                NavigationLink("Impressum") { LegalTextView(title: "Impressum", text: AppLegal.imprint) }
+                NavigationLink("Datenschutz") { LegalTextView(title: "Datenschutz", text: AppLegal.privacy) }
+                NavigationLink("Nutzungsbedingungen") { LegalTextView(title: "Nutzungsbedingungen", text: AppLegal.terms) }
+            }
         }
         .navigationTitle("Einstellungen")
         .onAppear {
@@ -78,15 +85,7 @@ struct SettingsView: View {
     // MARK: - Save
 
     private func saveURL() {
-        var url = tempURL.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !url.hasSuffix("/api") && !url.hasSuffix("/api/") {
-            url += "/api"
-        }
-        if !url.hasSuffix("/") {
-            url += "/"
-        }
-
+        let url = tempURL.trimmingCharacters(in: .whitespacesAndNewlines)
         settings.updateBaseURL(url)
         tempURL = url
     }
@@ -109,7 +108,7 @@ struct SettingsView: View {
             if !normalized.hasSuffix("/") { normalized += "/" }
 
             guard let baseURL = URL(string: normalized),
-                  let url = URL(string: "auth/me", relativeTo: baseURL) else { return false }
+                  let url = URL(string: "api/me", relativeTo: baseURL) else { return false }
 
             var req = URLRequest(url: url)
             req.httpMethod = "GET"
@@ -123,7 +122,7 @@ struct SettingsView: View {
             guard let http = response as? HTTPURLResponse else { return false }
 
             // 200...299 = Server erreichbar und OK
-            return (200...299).contains(http.statusCode)
+            return (200...299).contains(http.statusCode) || http.statusCode == 401
         } catch {
             #if DEBUG
             print("❌ testConnection(to:) failed:", error.localizedDescription)

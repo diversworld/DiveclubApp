@@ -6,48 +6,28 @@
 //
 
 import Foundation
-import Combine
+
 
 struct EventDetail: Decodable, Identifiable {
-
     let id: Int
     let title: String
     let description: String?
     let location: String?
-    let dateStart: Date?
-    let dateEnd: Date?
+
+    // Backend liefert Int-Timestamps (Unix seconds)
+    let dateStart: Int?
+    let dateEnd: Int?
+
     let courseId: Int?
+    let currentParticipants: Int?
+    let maxParticipants: Int?
+    let price: String?
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case title
-        case description
-        case location
-        case dateStart
-        case dateEnd
-        case courseId = "courseId"
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-
-        id = try c.decode(Int.self, forKey: .id)
-        title = try c.decode(String.self, forKey: .title)
-        description = try c.decodeIfPresent(String.self, forKey: .description)
-        location = try c.decodeIfPresent(String.self, forKey: .location)
-        courseId = try c.decodeIfPresent(Int.self, forKey: .courseId)
-
-        // ✅ Unix Timestamp (Sekunden) → Date
-        if let ts = try c.decodeIfPresent(Int.self, forKey: .dateStart) {
-            dateStart = Date(timeIntervalSince1970: TimeInterval(ts))
-        } else {
-            dateStart = nil
-        }
-
-        if let ts = try c.decodeIfPresent(Int.self, forKey: .dateEnd) {
-            dateEnd = Date(timeIntervalSince1970: TimeInterval(ts))
-        } else {
-            dateEnd = nil
-        }
+        case id, title, description, location, price
+        case dateStart, dateEnd
+        case courseId = "course_id"
+        case currentParticipants
+        case maxParticipants = "max_participants"
     }
 }

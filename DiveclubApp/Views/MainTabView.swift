@@ -39,7 +39,7 @@ struct MainTabView: View {
                     Label("Meine Kurse", systemImage: "book")
                 }
             }
-            .badge(enrollmentStore.activeCount)
+            .badge(enrollmentStore.activeCount) //enrollmentStore.badgeCount
 
             // MARK: TÜV Prüfungen
             NavigationStack {

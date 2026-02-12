@@ -46,7 +46,7 @@ struct CourseDetailView: View {
         }
         .navigationTitle("Kursdetails")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
+        .task(id: vm.enrollment.id) {
             await vm.loadHeader()
             if tab == .schedule { await vm.loadScheduleIfNeeded() }
         }
@@ -220,5 +220,10 @@ struct CourseDetailView: View {
         f.dateStyle = .medium
         f.timeStyle = .short
         return f.string(from: date)
+    }
+    
+    private static func formatDateTime(_ unix: Int) -> String {
+        let d = Date(timeIntervalSince1970: TimeInterval(unix))
+        return formatDateTime(d)
     }
 }

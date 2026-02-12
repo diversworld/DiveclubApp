@@ -5,18 +5,11 @@
 //  Created by Eckhard Becker on 10.02.26.
 //
 
-//
-//  ExpandableHTMLText.swift
-//  DiveclubApp
-//
-//  Created by Eckhard Becker on 10.02.26.
-//
-
 import SwiftUI
 import UIKit
 
 /// Zeigt HTML-Text erst kurz (lineLimit) und klappt bei Bedarf auf.
-/// In List/Section stabil (kein teures Height-Measuring).
+/// Stabil in List/Section (kein Scrollen, kein Height-Measuring).
 struct ExpandableHTMLText: View {
     let html: String
     var textStyle: UIFont.TextStyle = .footnote
@@ -28,10 +21,13 @@ struct ExpandableHTMLText: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
 
-            HTMLTextView(html: html, textStyle: textStyle)
-                .foregroundStyle(.secondary)
-                .lineLimit(isExpanded ? nil : collapsedLineLimit)
-                .fixedSize(horizontal: false, vertical: true)
+            HTMLTextView(
+                html: html,
+                textStyle: textStyle,
+                lineLimit: isExpanded ? nil : collapsedLineLimit
+            )
+            .fixedSize(horizontal: false, vertical: true)
+            .foregroundStyle(.secondary)
 
             if shouldShowButton {
                 HStack {
