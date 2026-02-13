@@ -210,26 +210,26 @@ final class APIClient {
 // MARK: - Auth Convenience (Member)
 
 extension APIClient {
-
+    
     private struct LoginResponseDTO: Decodable {
         let success: Bool
         let member: Member?
     }
-
+    
     func login(username: String, password: String) async throws -> Member {
         let req = LoginRequest(username: username, password: password)
         let resp: LoginResponseDTO = try await request("login", method: "POST", body: req)
-
+        
         guard resp.success, let member = resp.member else {
             throw APIError.badStatus(200, "Login fehlgeschlagen: success=false oder member fehlt.")
         }
         return member
     }
-
+    
     func me() async throws -> Member {
         try await request("me", method: "GET")
     }
-
+    
     func logout() async throws {
         try await requestWithoutResponse("logout", method: "POST")
     }
@@ -238,18 +238,34 @@ extension APIClient {
     func getReservations() async throws -> [EquipmentReservation] {
         try await request("reservations", method: "GET")
     }
-
+    
     // GET /api/reservations/{id}
     func getReservation(id: Int) async throws -> EquipmentReservation {
         try await request("reservations/\(id)", method: "GET")
     }
-
+    
     // POST /api/reservations
     func createReservation(_ payload: CreateReservationRequest) async throws -> CreateReservationResponse {
         try await request("reservations", method: "POST", body: payload)
     }
-}
+    
+    func bookTankCheck(_ payload: TankCheckBookRequest) async throws -> TankCheckBookingResponseDTO {
 
+        #if DEBUG
+        do {
+            let data = try encoder.encode(payload)
+            print("➡️ POST \(baseURL.absoluteString)/api/tank-checks/book")
+            print("➡️ Request JSON:")
+            print(String(data: data, encoding: .utf8) ?? "<no utf8>")
+        } catch {
+            print("❌ Could not encode TankCheckBookRequest:", error)
+        }
+        #endif
+
+        return try await request("/tank-checks/book", method: "POST", body: payload)
+    }
+    
+}
 // MARK: - Login Payload
 
 private struct LoginPayload: Codable {

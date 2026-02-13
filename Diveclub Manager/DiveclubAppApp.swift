@@ -20,7 +20,7 @@ struct DiveclubAppApp: App {
                 } else if auth.isLoggedIn {
                     MainTabView()
                 } else {
-                    StartView()
+                    HomeView()
                 }
             }
             .task {

@@ -17,7 +17,7 @@ struct TankEditorView: View {
 
     @State private var nickname: String = ""
     @State private var serialNumber: String = ""
-    @State private var volumeLiters: Int = 12
+    @State private var volumeLiters: Int = 10
     @State private var workingPressureBar: Int = 200
     @State private var errorMessage: String?
 
@@ -29,7 +29,7 @@ struct TankEditorView: View {
                     .textInputAutocapitalization(.characters)
 
                 Stepper("Volumen: \(volumeLiters)L", value: $volumeLiters, in: 1...30)
-                Stepper("Arbeitsdruck: \(workingPressureBar) bar", value: $workingPressureBar, in: 100...300, step: 10)
+                Stepper("Arbeitsdruck: \(workingPressureBar) bar", value: $workingPressureBar, in: 200...300, step: 100)
             }
 
             if let errorMessage {

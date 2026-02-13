@@ -38,11 +38,12 @@ struct TankChecksView: View {
                             TankCheckDetailView(proposalId: p.id)
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(p.title ?? "TÜV-Angebot")
+
+                                Text(p.title)
                                     .font(.headline)
 
-                                if let d = p.proposalDate {
-                                    Text(d, style: .date)
+                                if let unix = p.proposalDate, unix > 0 {
+                                    Text(Date(timeIntervalSince1970: TimeInterval(unix)), style: .date)
                                         .foregroundStyle(.secondary)
                                 } else {
                                     Text("Datum folgt")

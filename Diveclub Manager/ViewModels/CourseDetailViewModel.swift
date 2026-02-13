@@ -13,12 +13,10 @@ final class CourseDetailViewModel: ObservableObject {
 
     @Published var enrollment: StudentEnrollmentProgress
 
-    // Event-Header-Infos
     @Published var eventDetail: EventDetail?
     @Published var isLoadingHeader = false
     @Published var headerError: String?
 
-    // Schedule
     @Published var schedule: [EventScheduleItem] = []
     @Published var isLoadingSchedule = false
     @Published var scheduleError: String?
@@ -27,45 +25,31 @@ final class CourseDetailViewModel: ObservableObject {
         self.enrollment = enrollment
     }
 
-    /// Lädt Event-Details für Header
     func loadHeader() async {
         guard !isLoadingHeader else { return }
 
-        await MainActor.run {
-            headerError = nil
-            isLoadingHeader = true
-        }
-        defer {
-            Task { @MainActor in
-                self.isLoadingHeader = false
-            }
-        }
+        headerError = nil
+        isLoadingHeader = true
+        defer { isLoadingHeader = false }
 
         guard let eventId = enrollment.eventId else {
-            await MainActor.run {
-                self.headerError = "Kein event_id vorhanden."
-                self.eventDetail = nil
-            }
+            headerError = "Kein event_id vorhanden."
+            eventDetail = nil
             return
         }
 
         do {
             let e: EventDetail = try await APIClient.shared.request("/events/\(eventId)")
-            await MainActor.run {
-                self.eventDetail = e
-            }
+            eventDetail = e
         } catch {
-            await MainActor.run {
-                self.headerError = Self.describe(error)
-                self.eventDetail = nil
-            }
+            headerError = Self.describe(error)
+            eventDetail = nil
         }
     }
 
-
-    /// Lädt Terminplan nur bei Bedarf
     func loadScheduleIfNeeded() async {
         guard schedule.isEmpty else { return }
+        guard !isLoadingSchedule else { return }
 
         guard let eventId = enrollment.eventId else {
             scheduleError = "Kein event_id vorhanden."

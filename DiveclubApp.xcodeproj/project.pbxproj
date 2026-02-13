@@ -24,15 +24,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		7A0A6C132F3796B50039F86A /* DiveclubApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DiveclubApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0A6C132F3796B50039F86A /* Diveclub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Diveclub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A0A6C222F3796B80039F86A /* DiveclubAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DiveclubAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A0A6C2C2F3796B80039F86A /* DiveclubAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DiveclubAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		7A0A6C152F3796B50039F86A /* DiveclubApp */ = {
+		7A0A6C152F3796B50039F86A /* Diveclub Manager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DiveclubApp;
+			path = "Diveclub Manager";
 			sourceTree = "<group>";
 		};
 		7A0A6C252F3796B80039F86A /* DiveclubAppTests */ = {
@@ -75,7 +75,7 @@
 		7A0A6C0A2F3796B50039F86A = {
 			isa = PBXGroup;
 			children = (
-				7A0A6C152F3796B50039F86A /* DiveclubApp */,
+				7A0A6C152F3796B50039F86A /* Diveclub Manager */,
 				7A0A6C252F3796B80039F86A /* DiveclubAppTests */,
 				7A0A6C2F2F3796B80039F86A /* DiveclubAppUITests */,
 				7A0A6C142F3796B50039F86A /* Products */,
@@ -85,7 +85,7 @@
 		7A0A6C142F3796B50039F86A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7A0A6C132F3796B50039F86A /* DiveclubApp.app */,
+				7A0A6C132F3796B50039F86A /* Diveclub.app */,
 				7A0A6C222F3796B80039F86A /* DiveclubAppTests.xctest */,
 				7A0A6C2C2F3796B80039F86A /* DiveclubAppUITests.xctest */,
 			);
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		7A0A6C122F3796B50039F86A /* DiveclubApp */ = {
+		7A0A6C122F3796B50039F86A /* Diveclub */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7A0A6C362F3796B80039F86A /* Build configuration list for PBXNativeTarget "DiveclubApp" */;
+			buildConfigurationList = 7A0A6C362F3796B80039F86A /* Build configuration list for PBXNativeTarget "Diveclub" */;
 			buildPhases = (
 				7A0A6C0F2F3796B50039F86A /* Sources */,
 				7A0A6C102F3796B50039F86A /* Frameworks */,
@@ -108,13 +108,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				7A0A6C152F3796B50039F86A /* DiveclubApp */,
+				7A0A6C152F3796B50039F86A /* Diveclub Manager */,
 			);
-			name = DiveclubApp;
+			name = Diveclub;
 			packageProductDependencies = (
 			);
 			productName = DiveclubApp;
-			productReference = 7A0A6C132F3796B50039F86A /* DiveclubApp.app */;
+			productReference = 7A0A6C132F3796B50039F86A /* Diveclub.app */;
 			productType = "com.apple.product-type.application";
 		};
 		7A0A6C212F3796B80039F86A /* DiveclubAppTests */ = {
@@ -171,7 +171,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					7A0A6C122F3796B50039F86A = {
 						CreatedOnToolsVersion = 26.2;
@@ -200,7 +200,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				7A0A6C122F3796B50039F86A /* DiveclubApp */,
+				7A0A6C122F3796B50039F86A /* Diveclub */,
 				7A0A6C212F3796B80039F86A /* DiveclubAppTests */,
 				7A0A6C2B2F3796B80039F86A /* DiveclubAppUITests */,
 			);
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		7A0A6C242F3796B80039F86A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7A0A6C122F3796B50039F86A /* DiveclubApp */;
+			target = 7A0A6C122F3796B50039F86A /* Diveclub */;
 			targetProxy = 7A0A6C232F3796B80039F86A /* PBXContainerItemProxy */;
 		};
 		7A0A6C2E2F3796B80039F86A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7A0A6C122F3796B50039F86A /* DiveclubApp */;
+			target = 7A0A6C122F3796B50039F86A /* Diveclub */;
 			targetProxy = 7A0A6C2D2F3796B80039F86A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -550,7 +550,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7A0A6C362F3796B80039F86A /* Build configuration list for PBXNativeTarget "DiveclubApp" */ = {
+		7A0A6C362F3796B80039F86A /* Build configuration list for PBXNativeTarget "Diveclub" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7A0A6C372F3796B80039F86A /* Debug */,

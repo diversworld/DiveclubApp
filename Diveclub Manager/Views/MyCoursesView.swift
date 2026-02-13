@@ -39,16 +39,12 @@ struct MyCoursesView: View {
                                 Text(e.course.title.decodedEntities)
                                     .font(.headline)
 
-                                // falls du eventTitle nicht in progress hast: zeig eventId
                                 if let eventId = e.eventId {
                                     Text("Event #\(eventId)")
+                                        .font(.footnote)
                                         .foregroundStyle(.secondary)
                                 }
 
-                                Text(e.course.title.decodedEntities)
-                                    .foregroundStyle(.secondary)
-
-                                // ✅ NEU: Teaser aus Kursbeschreibung
                                 if let desc = e.course.description, !desc.isEmpty {
                                     Text(desc.htmlSummary(maxChars: 300))
                                         .font(.caption)
@@ -56,9 +52,10 @@ struct MyCoursesView: View {
                                         .lineLimit(4)
                                 }
 
-                                ProgressView(value: e.progressValue)                            }
+                                ProgressView(value: e.progressValue)
+                            }
                             .padding(.vertical, 4)
-                            .contentShape(Rectangle()) // ✅ gesamte Zeile tappbar
+                            .contentShape(Rectangle())
                         }
                     }
                 }
@@ -70,3 +67,4 @@ struct MyCoursesView: View {
         .refreshable { await vm.load() }
     }
 }
+

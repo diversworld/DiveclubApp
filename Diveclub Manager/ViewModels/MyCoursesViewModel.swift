@@ -18,6 +18,8 @@ final class MyCoursesViewModel: ObservableObject {
     @Published var isNotAStudentProfile = false
 
     func load() async {
+        guard !isLoading else { return }
+
         isLoading = true
         errorMessage = nil
         isNotAStudentProfile = false
@@ -27,7 +29,6 @@ final class MyCoursesViewModel: ObservableObject {
             let result: [StudentEnrollmentProgress] = try await APIClient.shared.request("progress")
             enrollments = result
         } catch {
-            // Spezialfall (bei dir kam das früher beim Instructor): "no student profile found"
             let msg = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             if msg.lowercased().contains("no student profile") {
                 isNotAStudentProfile = true
@@ -40,4 +41,3 @@ final class MyCoursesViewModel: ObservableObject {
         }
     }
 }
-
