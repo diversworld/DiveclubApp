@@ -16,7 +16,6 @@ struct MainTabView: View {
         TabView {
             NavigationStack {
                 HomeView()
-                    .navigationTitle("Home")
             }
             .tabItem { Label("Home", systemImage: "house") }
 
@@ -86,3 +85,6 @@ struct MainTabView: View {
     }
 }
 
+#Preview {
+    HomeView()
+}

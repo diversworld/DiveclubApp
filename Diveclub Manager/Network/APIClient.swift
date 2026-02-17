@@ -37,28 +37,45 @@ final class APIClient {
         config.httpCookieAcceptPolicy = .always
         config.httpShouldSetCookies = true
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        // ⚠️ diese Timeouts sind "Default". Wir setzen den echten Timeout pro Request.
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 30
 
         self.session = URLSession(configuration: config)
 
-        // ✅ WICHTIG: snake_case -> camelCase (enrollment_id -> enrollmentId usw.)
+        // ✅ snake_case -> camelCase
         decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
-    
-    // Base URL eurer Site (z.B. https://contao56.ddev.site)
-    //var baseURL: URL = URL(string: "https://contao56.ddev.site")!
 
+    // MARK: - Base URL (failsafe + unabhängig von @MainActor)
+
+    /// Liest BaseURL aus UserDefaults direkt, damit APIClient nicht von @MainActor abhängt.
+    /// Fallback: contao56.ddev.site
     var baseURL: URL {
-        let s = AppSettingsManager.shared.baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return URL(string: s) ?? URL(string: "https://contao56.ddev.site")!
+        let raw = (UserDefaults.standard.string(forKey: "baseURL") ?? "https://contao56.ddev.site")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return URL(string: raw) ?? URL(string: "https://contao56.ddev.site")!
+    }
+
+    /// Timeout aus Settings (UserDefaults) – falls nicht gesetzt: 12s (fail fast)
+    private var requestTimeout: TimeInterval {
+        let t = UserDefaults.standard.double(forKey: "appTimeout")
+        return t == 0 ? 12 : t
     }
 
     // MARK: - URL + Request
 
     private func makeURL(_ path: String) throws -> URL {
         let normalized = normalize(path)
-        guard let url = URL(string: "/api" + normalized, relativeTo: baseURL) else {
+
+        // Wenn baseURL bereits auf .../api zeigt, NICHT nochmal "/api" davor setzen.
+        let basePath = baseURL.path
+        let needsApiPrefix = !basePath.hasSuffix("/api") && !basePath.hasSuffix("/api/")
+
+        let fullPath = (needsApiPrefix ? "/api" : "") + normalized
+
+        guard let url = URL(string: fullPath, relativeTo: baseURL) else {
             throw APIError.invalidURL
         }
         return url
@@ -71,10 +88,14 @@ final class APIClient {
         req.httpBody = body
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         if body != nil { req.setValue("application/json", forHTTPHeaderField: "Content-Type") }
+
+        // ✅ WICHTIG: Timeout pro Request, damit die App nicht "hängt"
+        req.timeoutInterval = requestTimeout
+
         return req
     }
 
-    /// akzeptiert "/api/xyz" UND "/xyz"
+    /// akzeptiert "/api/xyz" UND "/xyz" UND "xyz"
     private func normalize(_ path: String) -> String {
         if path.hasPrefix("/api/") { return String(path.dropFirst(4)) } // remove "/api"
         if path.hasPrefix("/") { return path }
@@ -90,18 +111,25 @@ final class APIClient {
 
     private func send<T: Decodable>(_ request: URLRequest, as: T.Type) async throws -> T {
         do {
+            #if DEBUG
+            print("➡️ \(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "<nil>")")
+            #endif
+
             let (data, resp) = try await session.data(for: request)
+
             guard let http = resp as? HTTPURLResponse else {
                 throw APIError.badStatus(-1, "Keine HTTP-Antwort.")
             }
-            guard (200...299).contains(http.statusCode) else {
-                throw APIError.badStatus(http.statusCode, bodyString(data))
-            }
+
             #if DEBUG
-            print("➡️ \(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "<nil>")")
             print("⬅️ status:", http.statusCode)
             if let s = String(data: data, encoding: .utf8) { print("⬅️ body:", s) }
             #endif
+
+            guard (200...299).contains(http.statusCode) else {
+                throw APIError.badStatus(http.statusCode, bodyString(data))
+            }
+
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -111,25 +139,38 @@ final class APIClient {
                 print(String(data: data, encoding: .utf8) ?? "<non-utf8 data>")
                 print("❌ Error:", error)
                 #endif
-
                 throw APIError.decoding(error)
             }
+
         } catch let e as APIError {
             throw e
         } catch {
+            // hier landen auch Timeouts / NSURLErrorTimedOut / DNS etc.
             throw APIError.transport(error)
         }
     }
 
     private func sendNoContent(_ request: URLRequest) async throws {
         do {
+            #if DEBUG
+            print("➡️ \(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "<nil>")")
+            #endif
+
             let (data, resp) = try await session.data(for: request)
+
             guard let http = resp as? HTTPURLResponse else {
                 throw APIError.badStatus(-1, "Keine HTTP-Antwort.")
             }
+
+            #if DEBUG
+            print("⬅️ status:", http.statusCode)
+            if let s = String(data: data, encoding: .utf8) { print("⬅️ body:", s) }
+            #endif
+
             guard (200...299).contains(http.statusCode) else {
                 throw APIError.badStatus(http.statusCode, bodyString(data))
             }
+
         } catch let e as APIError {
             throw e
         } catch {
@@ -139,19 +180,16 @@ final class APIClient {
 
     // MARK: - Legacy-compatible API (dein bestehender Code)
 
-    /// Alt: request("/path") -> T
     func request<T: Decodable>(_ path: String) async throws -> T {
         let req = try makeRequest(method: "GET", path: path)
         return try await send(req, as: T.self)
     }
 
-    /// Alt: request("/path", method: "GET/POST/...", body: Data?) -> T
     func request<T: Decodable>(_ path: String, method: String, body: Data? = nil) async throws -> T {
         let req = try makeRequest(method: method, path: path, body: body)
         return try await send(req, as: T.self)
     }
 
-    /// Alt: request("/path", method: "...", body: Encodable) -> T
     func request<T: Decodable, B: Encodable>(_ path: String, method: String, body: B) async throws -> T {
         let data: Data
         do { data = try encoder.encode(body) }
@@ -160,7 +198,6 @@ final class APIClient {
         return try await send(req, as: T.self)
     }
 
-    /// Alt: requestWithoutResponse("/path", method: "PATCH/POST", body: Encodable?)
     func requestWithoutResponse<B: Encodable>(_ path: String, method: String, body: B?) async throws {
         let data: Data?
         if let body {
@@ -173,7 +210,6 @@ final class APIClient {
         try await sendNoContent(req)
     }
 
-    /// Alt: requestWithoutResponse("/path", method: "PATCH/POST") (ohne body)
     func requestWithoutResponse(_ path: String, method: String) async throws {
         let req = try makeRequest(method: method, path: path, body: nil)
         try await sendNoContent(req)
@@ -186,20 +222,6 @@ final class APIClient {
         storage.cookies?.forEach { storage.deleteCookie($0) }
     }
 
-    // MARK: - Tank checks
-
-    func getTankCheckProposals() async throws -> [TankCheckProposalDTO] {
-        try await request("/tank-checks")
-    }
-
-    func getTankCheckProposal(id: Int) async throws -> TankCheckProposalDetailDTO {
-        try await request("/tank-checks/\(id)")
-    }
-
-    func bookTankCheck(_ payload: TankCheckBookingPayload) async throws -> TankCheckBookingResponseDTO {
-        try await request("/tank-checks/book", method: "POST", body: payload)
-    }
-
     // MARK: - Events
 
     func getEvents() async throws -> [EventDTO] {
@@ -210,45 +232,60 @@ final class APIClient {
 // MARK: - Auth Convenience (Member)
 
 extension APIClient {
-    
+
     private struct LoginResponseDTO: Decodable {
         let success: Bool
         let member: Member?
     }
-    
+
     func login(username: String, password: String) async throws -> Member {
         let req = LoginRequest(username: username, password: password)
         let resp: LoginResponseDTO = try await request("login", method: "POST", body: req)
-        
+
         guard resp.success, let member = resp.member else {
             throw APIError.badStatus(200, "Login fehlgeschlagen: success=false oder member fehlt.")
         }
         return member
     }
-    
+
     func me() async throws -> Member {
         try await request("me", method: "GET")
     }
-    
+
     func logout() async throws {
         try await requestWithoutResponse("logout", method: "POST")
     }
-    
-    // GET /api/reservations
+
     func getReservations() async throws -> [EquipmentReservation] {
         try await request("reservations", method: "GET")
     }
-    
-    // GET /api/reservations/{id}
+
     func getReservation(id: Int) async throws -> EquipmentReservation {
         try await request("reservations/\(id)", method: "GET")
     }
-    
-    // POST /api/reservations
+
     func createReservation(_ payload: CreateReservationRequest) async throws -> CreateReservationResponse {
         try await request("reservations", method: "POST", body: payload)
     }
-    
+}
+// MARK: - Tank checks
+
+extension APIClient {
+
+    func getTankCheckProposals() async throws -> [TankCheckProposalDTO] {
+        try await request("/tank-checks")
+    }
+
+    func getTankCheckProposal(id: Int) async throws -> TankCheckProposalDetailDTO {
+        try await request("/tank-checks/\(id)")
+    }
+
+    /// ✅ NEU (umbenannt), falls irgendwo noch das alte Payload-Model genutzt wird
+    func bookTankCheckPayload(_ payload: TankCheckBookingPayload) async throws -> TankCheckBookingResponseDTO {
+        try await request("/tank-checks/book", method: "POST", body: payload)
+    }
+
+    /// ✅ Das ist die Version, die dein TankCheckDetailViewModel aktuell baut
     func bookTankCheck(_ payload: TankCheckBookRequest) async throws -> TankCheckBookingResponseDTO {
 
         #if DEBUG
@@ -264,9 +301,9 @@ extension APIClient {
 
         return try await request("/tank-checks/book", method: "POST", body: payload)
     }
-    
 }
-// MARK: - Login Payload
+
+// MARK: - Login Payload (falls irgendwo genutzt)
 
 private struct LoginPayload: Codable {
     let username: String
