@@ -11,9 +11,24 @@ import Combine
 @MainActor
 final class EquipmentRentalViewModel: ObservableObject {
 
+    struct ItemMeta: Equatable {
+        var types: [Int] = []
+        var subType: Int? = nil
+        var notes: String = ""
+    }
+
     @Published var assets: [EquipmentAsset] = []
     @Published var selected: Set<String> = []   // "type:id"
     @Published var reservedFor: String = ""     // optional Eingabe
+
+    // Zusätzliche Felder für Items
+    @Published var defaultTypes: [Int] = []
+    @Published var defaultSubType: Int? = nil
+    @Published var defaultNotes: String = ""
+
+    // Per-Item Metadaten (überschreiben Defaults)
+    @Published var perItemMeta: [String: ItemMeta] = [:]
+
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
@@ -56,6 +71,16 @@ final class EquipmentRentalViewModel: ObservableObject {
         selected.contains("\(asset.type.rawValue):\(asset.id)")
     }
 
+    func meta(for asset: EquipmentAsset) -> ItemMeta {
+        let key = "\(asset.type.rawValue):\(asset.id)"
+        return perItemMeta[key] ?? ItemMeta()
+    }
+
+    func updateMeta(for asset: EquipmentAsset, _ meta: ItemMeta) {
+        let key = "\(asset.type.rawValue):\(asset.id)"
+        perItemMeta[key] = meta
+    }
+
     func createReservation() async {
         successMessage = nil
         errorMessage = nil
@@ -80,7 +105,25 @@ final class EquipmentRentalViewModel: ObservableObject {
                   let type = EquipmentAssetType(rawValue: String(parts[0])),
                   let id = Int(parts[1]) else { return nil }
 
-            return CreateReservationItem(itemId: id, itemType: type.backendItemType)
+            let keyStr = "\(type.rawValue):\(id)"
+            let meta = perItemMeta[keyStr] ?? ItemMeta(types: defaultTypes, subType: defaultSubType, notes: defaultNotes)
+            return CreateReservationItem(
+                itemId: id,
+                itemType: type.backendItemType,
+                types: meta.types.isEmpty ? nil : meta.types,
+                subType: meta.subType,
+                notes: meta.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : meta.notes
+            )
+        }
+
+        // Resolve memberId from session (fallback demo)
+        if UserSession.shared.memberId == nil {
+            // TODO: Entfernen, sobald echte Auth den memberId setzt
+            UserSession.shared.memberId = 4
+        }
+        guard let memberId = UserSession.shared.memberId else {
+            errorMessage = "Kein Mitglied angemeldet (memberId fehlt)."
+            return
         }
 
         isLoading = true
@@ -88,9 +131,10 @@ final class EquipmentRentalViewModel: ObservableObject {
 
         do {
             let payload = CreateReservationRequest(
-                reservedFor: reservedForId,   // optional, Backend defaultet sonst auf userId
-                eventId: 0,                   // optional (bei dir Default 0)
-                assetType: "multiple",         // optional (bei dir Default 'multiple')
+                memberId: memberId,
+                reservedFor: reservedForId,
+                eventId: 0,
+                assetType: "multiple",
                 items: items
             )
 
@@ -113,3 +157,4 @@ final class EquipmentRentalViewModel: ObservableObject {
         (asset.status ?? "").lowercased() == "available"
     }
 }
+

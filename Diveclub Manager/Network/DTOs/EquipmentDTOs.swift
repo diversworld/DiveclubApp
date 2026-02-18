@@ -13,7 +13,7 @@ struct EquipmentDTO: Decodable, Identifiable, Equatable {
     let title: String?
     let status: String?
     let rentalFee: String?
-    let manufacturer: Int?
+    let manufacturer: String?
     let model: String?
     let color: String?
     let size: Int?
@@ -21,8 +21,28 @@ struct EquipmentDTO: Decodable, Identifiable, Equatable {
     let notes: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, status, manufacturer, model, color, size, serialNumber, notes
-        case rentalFee
+        case id, title, status, model, color, size, notes
+        case rentalFee = "rentalFee"
+        case manufacturer = "manufacturer"
+        case serialNumber = "serialNumber"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title)
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+        model = try c.decodeIfPresent(String.self, forKey: .model)
+        color = try c.decodeIfPresent(String.self, forKey: .color)
+        size = try c.decodeIfPresent(Int.self, forKey: .size)
+        notes = try c.decodeIfPresent(String.self, forKey: .notes)
+        serialNumber = try c.decodeIfPresent(String.self, forKey: .serialNumber)
+        // rentalFee can be number or string
+        if let num = try? c.decode(Double.self, forKey: .rentalFee) { rentalFee = String(num) }
+        else { rentalFee = try c.decodeIfPresent(String.self, forKey: .rentalFee) }
+        // manufacturer can be number or string; store as string for display
+        if let num = try? c.decode(Int.self, forKey: .manufacturer) { manufacturer = String(num) }
+        else { manufacturer = try c.decodeIfPresent(String.self, forKey: .manufacturer) }
     }
 }
 
@@ -42,6 +62,21 @@ struct TankDTO: Decodable, Identifiable, Equatable {
     enum CodingKeys: String, CodingKey {
         case id, title, serialNumber, manufacturer, bazNumber, size, status, rentalFee, lastCheckDate, nextCheckDate
     }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title)
+        serialNumber = try c.decodeIfPresent(String.self, forKey: .serialNumber)
+        manufacturer = try c.decodeIfPresent(String.self, forKey: .manufacturer)
+        bazNumber = try c.decodeIfPresent(String.self, forKey: .bazNumber)
+        size = try c.decodeIfPresent(String.self, forKey: .size)
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+        if let num = try? c.decode(Double.self, forKey: .rentalFee) { rentalFee = String(num) }
+        else { rentalFee = try c.decodeIfPresent(String.self, forKey: .rentalFee) }
+        lastCheckDate = try c.decodeIfPresent(Int.self, forKey: .lastCheckDate)
+        nextCheckDate = try c.decodeIfPresent(Int.self, forKey: .nextCheckDate)
+    }
 }
 
 // /api/regulators
@@ -58,6 +93,21 @@ struct RegulatorDTO: Decodable, Identifiable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, status, rentalFee, manufacturer, serialNumber1st, serialNumber2ndPri, serialNumber2ndSec, notes
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title)
+        status = try c.decodeIfPresent(String.self, forKey: .status)
+        if let num = try? c.decode(Double.self, forKey: .rentalFee) { rentalFee = String(num) }
+        else { rentalFee = try c.decodeIfPresent(String.self, forKey: .rentalFee) }
+        if let manNum = try? c.decode(Int.self, forKey: .manufacturer) { manufacturer = String(manNum) }
+        else { manufacturer = try c.decodeIfPresent(String.self, forKey: .manufacturer) }
+        serialNumber1st = try c.decodeIfPresent(String.self, forKey: .serialNumber1st)
+        serialNumber2ndPri = try c.decodeIfPresent(String.self, forKey: .serialNumber2ndPri)
+        serialNumber2ndSec = try c.decodeIfPresent(String.self, forKey: .serialNumber2ndSec)
+        notes = try c.decodeIfPresent(String.self, forKey: .notes)
     }
 }
 
@@ -128,3 +178,4 @@ extension RegulatorDTO {
         )
     }
 }
+

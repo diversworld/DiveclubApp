@@ -22,24 +22,25 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var showRefreshedBanner = false
 
+    // Höhe der fixen Fußzeile (damit ScrollView unten Platz lässt)
+    private let bottomBarHeight: CGFloat = 86
+
     var body: some View {
         ZStack(alignment: .top) {
-            
+
             // ✅ Statusbar/SafeArea oben blau
             StatusBarBackground(color: Color("BrandBlue"))
-            
+
             content
         }
         .task { await vm.load() }
 
-        // ✅ sheet(item:) verhindert “leer beim ersten Öffnen”
         .sheet(item: Binding(
             get: { selectedNewsId.map(IdentifiedInt.init) },
             set: { selectedNewsId = $0?.value }
         )) { item in
             NavigationStack { NewsDetailView(newsId: item.value) }
         }
-
         .sheet(isPresented: $showLogin) {
             NavigationStack { LoginView() }
         }
@@ -66,19 +67,16 @@ struct HomeView: View {
                 ContentUnavailableView("Fehler", systemImage: "exclamationmark.triangle", description: Text(err))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .overlay(alignment: .bottom) {
+                        // hier bleibt alles wie gehabt
                         HStack {
-                            Button {
-                                Task { await vm.load() }
-                            } label: {
+                            Button { Task { await vm.load() } } label: {
                                 Label("Erneut versuchen", systemImage: "arrow.clockwise")
                             }
                             .buttonStyle(.borderedProminent)
 
                             Spacer()
 
-                            Button {
-                                showSettings = true
-                            } label: {
+                            Button { showSettings = true } label: {
                                 Label("Einstellungen", systemImage: "gearshape")
                             }
                             .buttonStyle(.bordered)
@@ -99,13 +97,9 @@ struct HomeView: View {
                         }
 
                         newsSection
-
-                        bottomActions
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
                     }
-                    .padding(.top, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading) // ✅ verhindert “nach links versetzt”
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, bottomBarHeight) // ✅ Platz für fixe Fußzeile
                 }
                 .refreshable {
                     let generator = UINotificationFeedbackGenerator()
@@ -121,12 +115,23 @@ struct HomeView: View {
                         withAnimation(.easeInOut) { showRefreshedBanner = false }
                     }
                 }
+                // ✅ Fußzeile fest “angedockt”, wie TabBar
+                .safeAreaInset(edge: .bottom) {
+                    bottomActions
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 0)
+                        .padding(.top, 16)
+                        .background(.ultraThinMaterial)
+                        .overlay {
+                            // dünne Trennlinie oben, wie bei TabBars
+                            VStack { Spacer() }
+                        }
+                }
             }
         }
     }
 
-    // MARK: - Header (BrandBlue + Statusbar)
-
+    // MARK: - Header (unverändert)
     private var header: some View {
         VStack(spacing: 12) {
             if let logoPath = vm.config?.logo,
@@ -162,17 +167,16 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.vertical, 16)
             }
         }
         .frame(maxWidth: .infinity)
         .background(Color("BrandBlue"))
         .foregroundStyle(.white)
-        .ignoresSafeArea(edges: .top) // ✅ färbt Statusbar-Bereich mit
+        .ignoresSafeArea(edges: .top)
     }
 
-    // MARK: - News Section
-
+    // MARK: - News Section (unverändert)
     @ViewBuilder
     private var newsSection: some View {
         if !vm.news.isEmpty {
@@ -255,7 +259,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(radius: 6, y: 2) // ✅ card-like
+        .shadow(radius: 6, y: 2)
     }
 
     private var placeholderImage: some View {
@@ -270,17 +274,17 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Bottom actions
-
+    // MARK: - Bottom actions (unverändert)
     private var bottomActions: some View {
         VStack(spacing: 12) {
-            Divider().padding(.vertical, 8)
+            //Divider().padding(.vertical, 2)
 
             HStack {
                 Button { showLogin = true } label: {
-                    Label("Login", systemImage: "person.badge.key")
+                    Image(systemName: "person.badge.key").imageScale(.large)
+                    //Label("Login", systemImage: "person.badge.key")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
 
                 Spacer()
 
@@ -311,7 +315,6 @@ private struct IdentifiedInt: Identifiable {
 private struct StatusBarBackground: View {
     let color: Color
     var body: some View {
-       
         GeometryReader { proxy in
             color
                 .frame(height: proxy.safeAreaInsets.top)
@@ -321,6 +324,7 @@ private struct StatusBarBackground: View {
         .frame(height: 0)
     }
 }
+
 
 #Preview {
     NavigationStack { HomeView() }

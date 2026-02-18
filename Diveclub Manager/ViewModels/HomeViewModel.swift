@@ -100,7 +100,7 @@ final class HomeViewModel: ObservableObject {
 
             do {
                 let latest: [NewsItemDTO] = try await withTimeout(seconds: 12) {
-                    try await APIClient.shared.request("/app/news?archive=\(archiveId)&limit=4")
+                    try await APIClient.shared.request("/app/news?archive=\(archiveId)&limit=0")
                 }
                 self.news = latest
                 self.cache.saveNews(latest)
