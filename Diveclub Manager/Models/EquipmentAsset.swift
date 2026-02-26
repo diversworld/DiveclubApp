@@ -21,7 +21,7 @@ enum EquipmentAssetType: String, Codable, CaseIterable {
     }
 }
 
-struct EquipmentAsset: Identifiable, Equatable, Codable {
+struct EquipmentAsset: Identifiable, Equatable, Codable, Hashable {
     let id: Int
     let type: EquipmentAssetType
 

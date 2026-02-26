@@ -4,6 +4,7 @@
 //
 //  Created by Eckhard Becker on 10.02.26.
 //
+
 import SwiftUI
 
 struct EquipmentReservationCreateView: View {

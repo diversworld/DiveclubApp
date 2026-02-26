@@ -2,11 +2,17 @@ import SwiftUI
 
 struct ReservationView: View {
     @StateObject private var vm = ReservationViewModel()
-
+    
     @State private var selectedItemId: Int? = nil
     @State private var notes: String = ""
     @State private var selectedMemberId: Int? = nil
 
+    let preselected: EquipmentAsset?
+
+    init(preselected: EquipmentAsset? = nil) {
+        self.preselected = preselected
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Category picker

@@ -12,27 +12,44 @@ struct MainTabView: View {
     @StateObject private var enrollmentStore = EnrollmentStore.shared
     @StateObject private var auth = AuthManager.shared
 
+    @StateObject private var nav = NavigationStore()
+
     var body: some View {
-        TabView {
-            NavigationStack {
+        TabView(selection: $nav.selectedTab) {
+
+            NavigationStack(path: nav.pathBinding(for: .home)) {
                 HomeView()
+                    .navigationDestination(for: AppRoute.self) { route in
+                        routeDestination(route)
+                    }
             }
             .tabItem { Label("Home", systemImage: "house") }
+            .tag(NavigationStore.Tab.home)
 
             if auth.isLoggedIn {
-                NavigationStack {
+
+                NavigationStack(path: nav.pathBinding(for: .events)) {
                     EventsView()
                         .navigationTitle("Events")
+                        .navigationDestination(for: AppRoute.self) { route in
+                            routeDestination(route)
+                        }
                 }
                 .tabItem { Label("Events", systemImage: "calendar") }
+                .tag(NavigationStore.Tab.events)
 
-                NavigationStack {
-                    if auth.isInstructor {
-                        InstructorDashboardView()
-                            .navigationTitle("Instructor")
-                    } else {
-                        MyCoursesView()
-                            .navigationTitle("Meine Kurse")
+                NavigationStack(path: nav.pathBinding(for: .courses)) {
+                    Group {
+                        if auth.isInstructor {
+                            InstructorDashboardView()
+                                .navigationTitle("Instructor")
+                        } else {
+                            MyCoursesView()
+                                .navigationTitle("Meine Kurse")
+                        }
+                    }
+                    .navigationDestination(for: AppRoute.self) { route in
+                        routeDestination(route)
                     }
                 }
                 .tabItem {
@@ -43,36 +60,38 @@ struct MainTabView: View {
                     }
                 }
                 .badge(enrollmentStore.badgeCount)
+                .tag(NavigationStore.Tab.courses)
 
-                NavigationStack {
+                NavigationStack(path: nav.pathBinding(for: .tankChecks)) {
                     TankChecksView()
                         .navigationTitle("TÜV Prüfungen")
+                        .navigationDestination(for: AppRoute.self) { route in
+                            routeDestination(route)
+                        }
                 }
                 .tabItem { Label("TÜV", systemImage: "checkmark.seal") }
+                .tag(NavigationStore.Tab.tankChecks)
 
-                /*NavigationStack {
-                    EquipmentView()
-                        .navigationTitle("Equipment")
-                }
-                .tabItem { Label("Equipment", systemImage: "shippingbox") }
-                */
-                NavigationStack {
+                NavigationStack(path: nav.pathBinding(for: .equipment)) {
                     EquipmentReservationsView()
                         .navigationTitle("Equipment Verleih")
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                NavigationLink {
-                                    ReservationView()
-                                        .navigationTitle("Neue Reservierung")
+                                Button {
+                                    nav.push(.reservationCreate(preselected: nil), in: .equipment)
                                 } label: {
                                     Image(systemName: "plus")
                                 }
                             }
                         }
+                        .navigationDestination(for: AppRoute.self) { route in
+                            routeDestination(route)
+                        }
                 }
-                .tabItem { Label("Equipment Verleih", systemImage: "tray.full") }
+                .tabItem { Label("Equipment", systemImage: "tray.full") }
+                .tag(NavigationStore.Tab.equipment)
 
-                NavigationStack {
+                NavigationStack(path: nav.pathBinding(for: .profile)) {
                     ProfileView()
                         .navigationTitle("Profil")
                         .toolbar {
@@ -82,25 +101,56 @@ struct MainTabView: View {
                                 }
                             }
                         }
+                        .navigationDestination(for: AppRoute.self) { route in
+                            routeDestination(route)
+                        }
                 }
                 .tabItem { Label("Profil", systemImage: "person.circle") }
+                .tag(NavigationStore.Tab.profile)
 
-                NavigationStack {
+                NavigationStack(path: nav.pathBinding(for: .settings)) {
                     SettingsView()
                         .navigationTitle("Einstellungen")
+                        .navigationDestination(for: AppRoute.self) { route in
+                            routeDestination(route)
+                        }
                 }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(NavigationStore.Tab.settings)
             }
         }
-        // ✅ nach dem TabView-Render starten (nicht während body Updates)
+        .environmentObject(nav) // ✅ Navigation global verfügbar
         .task {
             if auth.isLoggedIn {
                 await enrollmentStore.refresh()
             }
         }
     }
-}
 
-#Preview {
-    HomeView()
+    // MARK: - Route resolver (1 Stelle für die ganze App)
+
+    @ViewBuilder
+    private func routeDestination(_ route: AppRoute) -> some View {
+        switch route {
+
+        case .reservationCreate(let preselected):
+            ReservationView(preselected: preselected)
+                .navigationTitle("Neue Reservierung")
+
+        case .reservationDetail(let id):
+            EquipmentReservationDetailView(reservationId: id)
+
+        case .settings:
+            SettingsView().navigationTitle("Einstellungen")
+
+        case .legalImprint:
+            LegalHTMLView(title: "Impressum", html: AppSettingsManager.shared.imprintHTML)
+
+        case .legalPrivacy:
+            LegalHTMLView(title: "Datenschutz", html: AppSettingsManager.shared.privacyHTML)
+
+        case .legalTerms:
+            LegalHTMLView(title: "Nutzungsbedingungen", html: AppSettingsManager.shared.termsHTML)
+        }
+    }
 }
