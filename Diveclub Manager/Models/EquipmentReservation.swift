@@ -4,7 +4,6 @@
 //
 //  Created by Eckhard Becker on 10.02.26.
 //
-
 import Foundation
 
 // GET /api/reservations
@@ -26,19 +25,31 @@ struct EquipmentReservation: Decodable, Identifiable {
     let pickedUpAt: Int?
     let returnedAt: Int?
 
+    // ✅ optional: falls Backend diese Felder auf Reservation-Ebene liefert
+    let regModel1st: String?
+    let regModel2ndPri: String?
+    let regModel2ndSec: String?
+
     let items: [EquipmentReservationItem]?
 
     enum CodingKeys: String, CodingKey {
         case id, title, notes, items
+
         case reservationStatus = "reservation_status"
         case assetType = "asset_type"
         case memberId = "member_id"
         case reservedFor
         case eventId = "event_id"
         case rentalFee
+
         case reservedAt = "reserved_at"
         case pickedUpAt = "picked_up_at"
         case returnedAt = "returned_at"
+
+        // ✅ wichtig, sonst Decodable-Fehler
+        case regModel1st
+        case regModel2ndPri
+        case regModel2ndSec
     }
 }
 
@@ -48,6 +59,11 @@ struct EquipmentReservationItem: Decodable, Identifiable {
     let itemId: Int?
     let itemType: String?
     let reservationStatus: String?
+
+    // ✅ Regler-Modelle pro Item (wenn Backend das so liefert)
+    let regModel1st: String?
+    let regModel2ndPri: String?
+    let regModel2ndSec: String?
 
     // Timestamps (Unix seconds)
     let reservedAt: Int?
@@ -63,8 +79,15 @@ struct EquipmentReservationItem: Decodable, Identifiable {
         case itemId = "item_id"
         case itemType = "item_type"
         case reservationStatus = "reservation_status"
+
         case types
         case subType = "sub_type"
+
+        // ✅ Regler-Modelle
+        case regModel1st
+        case regModel2ndPri
+        case regModel2ndSec
+
         case reservedAt = "reserved_at"
         case pickedUpAt = "picked_up_at"
         case returnedAt = "returned_at"

@@ -136,7 +136,29 @@ struct EquipmentReservationDetailView: View {
                                 let stLbl = subTypeLabel(for: it.types, sKey: st)
                                 Text("Subtyp: \(stLbl ?? st)").font(.footnote)
                             }
+                          
+                            // ✅ Regler-Modelle anzeigen (wenn vorhanden)
+                            // Fallback: falls Backend sie auf Reservation-Ebene liefert (d.*)
+                            let m1 = (it.regModel1st?.isEmpty == false) ? it.regModel1st : d.regModel1st
+                            let m2p = (it.regModel2ndPri?.isEmpty == false) ? it.regModel2ndPri : d.regModel2ndPri
+                            let m2s = (it.regModel2ndSec?.isEmpty == false) ? it.regModel2ndSec : d.regModel2ndSec
 
+                            if let v = m1, !v.isEmpty {
+                                Text("Modell 1. Stufe: \(v)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if let v = m2p, !v.isEmpty {
+                                Text("Modell 2. Stufe (prim): \(v)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if let v = m2s, !v.isEmpty {
+                                Text("Modell 2. Stufe (sec): \(v)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
                             VStack(alignment: .leading, spacing: 2) {
                                 if let v = it.reservedAt { Text("Reserviert: \(formatDateTime(v))").font(.caption).foregroundStyle(.secondary) }
                                 if let v = it.pickedUpAt { Text("Abgeholt: \(formatDateTime(v))").font(.caption).foregroundStyle(.secondary) }

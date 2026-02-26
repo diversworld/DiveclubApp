@@ -123,13 +123,15 @@ struct TankDTO: Decodable, Identifiable, Equatable {
 
     // Display helpers for selection lists
     var displayTitle: String {
-        let name = [
+        let parts: [String] = [
+            "Flasche #\(id)", // ✅ Inventarnummer immer sichtbar
             title?.isEmpty == false ? title : nil,
             serialNumber?.isEmpty == false ? "SN \(serialNumber!)" : nil,
             size?.isEmpty == false ? "\(size!) L" : nil
-        ].compactMap { $0 }.joined(separator: " · ")
-        return name.isEmpty ? "Flasche #\(id)" : name
+        ].compactMap { $0 }
+        return parts.joined(separator: " · ")
     }
+    
     var displaySubtitle: String? {
         let details = [
             manufacturer?.isEmpty == false ? "Hersteller: \(manufacturer!)" : nil,

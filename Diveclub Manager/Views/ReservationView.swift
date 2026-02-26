@@ -92,17 +92,46 @@ struct ReservationView: View {
                         if !vm.selectedDrafts.isEmpty {
                             Section("Auswahl") {
                                 ForEach(vm.selectedDrafts) { d in
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text("#\(d.itemId ?? 0) • \(d.itemType)")
-                                            if let t = d.types, !t.isEmpty { Text("Typ: \(t)").font(.footnote).foregroundStyle(.secondary) }
-                                            if let st = d.subType, !st.isEmpty { Text("Subtyp: \(st)").font(.footnote).foregroundStyle(.secondary) }
-                                            if let n = d.notes, !n.isEmpty { Text(n).font(.footnote).foregroundStyle(.secondary) }
+                                    HStack(alignment: .top) {
+                                        VStack(alignment: .leading, spacing: 4) {
+
+                                            // ✅ schöner Titel
+                                            Text(d.displayTitle.isEmpty ? "#\(d.itemId ?? 0)" : d.displayTitle)
+                                                .font(.headline)
+
+                                            // ✅ Subtitle (bei Reglern: Model 1st/2ndPri/2ndSec)
+                                            if let sub = d.displaySubtitle, !sub.isEmpty {
+                                                Text(sub)
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
+
+                                            // Equipment-spezifisch (optional weiterhin)
+                                            if let t = d.types, !t.isEmpty {
+                                                Text("Typ: \(t)")
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            if let st = d.subType, !st.isEmpty {
+                                                Text("Subtyp: \(st)")
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
+
+                                            if let n = d.notes, !n.isEmpty {
+                                                Text(n)
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
                                         }
+
                                         Spacer()
+
                                         Button(role: .destructive) {
                                             vm.selectedDrafts.removeAll { $0.id == d.id }
-                                        } label: { Image(systemName: "trash") }
+                                        } label: {
+                                            Image(systemName: "trash")
+                                        }
                                     }
                                 }
                             }
@@ -136,6 +165,8 @@ private struct ItemSelectionList: View {
     let items: [Int: ReservationViewModel.ItemDisplay]
     @Binding var selectedId: Int?
 
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         // Group by groupTitle when available (e.g., Equipment by Type)
         let groups: [String: [(Int, ReservationViewModel.ItemDisplay)]] = {
@@ -159,15 +190,26 @@ private struct ItemSelectionList: View {
                             let display = items[key]
                             Button {
                                 selectedId = key
+                                dismiss()        // ✅ zurück zur ReservationView
                             } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(display?.title ?? "#\(key)")
-                                        .foregroundColor(.primary)
-                                    if let subtitle = display?.subtitle, !subtitle.isEmpty {
-                                        Text(subtitle)
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(2)
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(display?.title ?? "#\(key)")
+                                            .foregroundColor(.primary)
+
+                                        if let subtitle = display?.subtitle, !subtitle.isEmpty {
+                                            Text(subtitle)
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    if selectedId == key {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
                                     }
                                 }
                             }
@@ -180,15 +222,26 @@ private struct ItemSelectionList: View {
                     let display = items[key]
                     Button {
                         selectedId = key
+                        dismiss()        // ✅ zurück zur ReservationView
                     } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(display?.title ?? "#\(key)")
-                                .foregroundColor(.primary)
-                            if let subtitle = display?.subtitle, !subtitle.isEmpty {
-                                Text(subtitle)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(display?.title ?? "#\(key)")
+                                    .foregroundColor(.primary)
+
+                                if let subtitle = display?.subtitle, !subtitle.isEmpty {
+                                    Text(subtitle)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+
+                            Spacer()
+
+                            if selectedId == key {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
                             }
                         }
                     }
