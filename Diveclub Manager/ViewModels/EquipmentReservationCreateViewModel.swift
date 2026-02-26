@@ -21,6 +21,9 @@ final class EquipmentReservationCreateViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var successMessage: String?
 
+    /// Optional: falls du globale Notes mitschicken willst
+    @Published var notes: String = ""
+
     func toggle(asset: EquipmentAsset) {
         let key = Self.key(asset)
         if selected.contains(key) {
@@ -59,13 +62,22 @@ final class EquipmentReservationCreateViewModel: ObservableObject {
         let startTs = Int(startDate.timeIntervalSince1970)
         let endTs = Int(endDate.timeIntervalSince1970)
 
-        // Items bauen
-        let items: [EquipmentReservationRequest.Item] = selected.compactMap { key in
+        // Items bauen (✅ jetzt mit neuen Feldern)
+        let items: [EquipmentReservationRequest.Item] = selected.compactMap { key -> EquipmentReservationRequest.Item? in
             let parts = key.split(separator: "#", maxSplits: 1).map(String.init)
             guard parts.count == 2, let assetId = Int(parts[1]) else { return nil }
+
             let type = parts[0]
             let qty = max(1, quantityByKey[key] ?? 1)
-            return EquipmentReservationRequest.Item(assetType: type, assetId: assetId, quantity: qty)
+
+            return EquipmentReservationRequest.Item(
+                assetType: type,
+                assetId: assetId,
+                quantity: qty,
+                types: nil,
+                subType: nil,
+                notes: nil
+            )
         }
 
         guard !items.isEmpty else {
@@ -81,12 +93,15 @@ final class EquipmentReservationCreateViewModel: ObservableObject {
                 memberId: memberId,
                 reservedFor: .init(start: startTs, end: endTs),
                 assetType: "equipment",
-                items: items
+                items: items,
+                notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
             )
 
-            // viele Backends geben 201 + JSON zurück; wir akzeptieren beides.
-            // Wenn dein Backend „no content“ liefert, dann auf requestWithoutResponse wechseln.
-            let _: EquipmentReservation = try await APIClient.shared.request("reservations", method: "POST", body: payload)
+            let _: EquipmentReservation = try await APIClient.shared.request(
+                "reservations",
+                method: "POST",
+                body: payload
+            )
 
             successMessage = "Reservierung wurde angelegt."
             selected.removeAll()

@@ -11,150 +11,181 @@ import Combine
 @MainActor
 final class EquipmentRentalViewModel: ObservableObject {
 
-    struct ItemMeta: Equatable {
-        var types: [Int] = []
-        var subType: Int? = nil
-        var notes: String = ""
-    }
+    // MARK: - Dates / Notes
 
-    @Published var assets: [EquipmentAsset] = []
-    @Published var selected: Set<String> = []   // "type:id"
-    @Published var reservedFor: String = ""     // optional Eingabe
+    @Published var startDate: Date = Date()
+    @Published var endDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
 
-    // Zusätzliche Felder für Items
-    @Published var defaultTypes: [Int] = []
-    @Published var defaultSubType: Int? = nil
+    @Published var reservedFor: String = ""   // optional member id
     @Published var defaultNotes: String = ""
 
-    // Per-Item Metadaten (überschreiben Defaults)
-    @Published var perItemMeta: [String: ItemMeta] = [:]
+    // MARK: - UI State
 
-    @Published var isLoading = false
+    @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
 
-    // Zeitraum (UI)
-    @Published var startDate: Date = .now
-    @Published var endDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+    // MARK: - Assets
 
-    func loadAssets() async {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+    @Published var selectedCategory: Category = .equipment
+    @Published private(set) var allAssets: [EquipmentAsset] = []
 
-        do {
-            // Diese DTOs müssen bei dir existieren und Decodable sein:
-            let eq: [EquipmentDTO] = try await APIClient.shared.request("equipment")
-            let tanks: [TankDTO] = try await APIClient.shared.request("tanks")
-            let regs: [RegulatorDTO] = try await APIClient.shared.request("regulators")
+    // Selected set uses asset.uniqueKey
+    @Published var selected: Set<String> = []
 
-            let mapped =
-                eq.map { $0.toAsset() } +
-                tanks.map { $0.toAsset() } +
-                regs.map { $0.toAsset() }
+    // MARK: - Options for subtype mapping
 
-            // MVP-Verfügbarkeit: status == "available"
-            assets = mapped.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-        } catch {
-            errorMessage = error.localizedDescription
-            assets = []
-        }
+    @Published private(set) var equipmentOptions: EquipmentOptionsDTO?
+
+    // MARK: - Per-item meta
+
+    struct ItemMeta: Equatable {
+        var notes: String = ""
+        var types: String? = nil     // "1", "2", ...
+        var subType: String? = nil   // "1", "2", ...
+    }
+
+    @Published private var metaByKey: [String: ItemMeta] = [:]
+
+    // MARK: - Category
+
+    enum Category: String, CaseIterable, Identifiable {
+        case equipment, tank, regulator
+        var id: String { rawValue }
+    }
+
+    // MARK: - Derived
+
+    var visibleAssets: [EquipmentAsset] {
+        allAssets.filter { $0.type.rawValue == selectedCategory.rawValue }
+    }
+
+    // MARK: - Selection helpers
+
+    func isSelected(_ asset: EquipmentAsset) -> Bool {
+        selected.contains(asset.uniqueKey)
     }
 
     func toggleSelection(_ asset: EquipmentAsset) {
-        let key = "\(asset.type.rawValue):\(asset.id)"
-        if selected.contains(key) { selected.remove(key) } else { selected.insert(key) }
-    }
-
-    func isSelected(_ asset: EquipmentAsset) -> Bool {
-        selected.contains("\(asset.type.rawValue):\(asset.id)")
+        let key = asset.uniqueKey
+        if selected.contains(key) {
+            selected.remove(key)
+        } else {
+            selected.insert(key)
+            if metaByKey[key] == nil {
+                metaByKey[key] = ItemMeta(notes: defaultNotes, types: nil, subType: nil)
+            }
+        }
     }
 
     func meta(for asset: EquipmentAsset) -> ItemMeta {
-        let key = "\(asset.type.rawValue):\(asset.id)"
-        return perItemMeta[key] ?? ItemMeta()
+        metaByKey[asset.uniqueKey] ?? ItemMeta(notes: defaultNotes, types: nil, subType: nil)
     }
 
     func updateMeta(for asset: EquipmentAsset, _ meta: ItemMeta) {
-        let key = "\(asset.type.rawValue):\(asset.id)"
-        perItemMeta[key] = meta
+        metaByKey[asset.uniqueKey] = meta
     }
 
-    func createReservation() async {
-        successMessage = nil
-        errorMessage = nil
+    // Falls du echte Availability hast, lass deine Logik stehen.
+    func isAvailable(_ asset: EquipmentAsset) -> Bool { true }
 
-        guard !selected.isEmpty else {
+    // MARK: - Loading
+
+    func loadAssets() async {
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            try await loadEquipmentOptionsIfNeeded()
+
+            // ⚠️ HIER: nutze deinen echten Endpoint (ich kenne ihn nicht)
+            // Beispiel:
+            // allAssets = try await APIClient.shared.request("equipment/assets")
+            allAssets = try await APIClient.shared.request("equipment/assets")
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func loadEquipmentOptionsIfNeeded() async throws {
+        if equipmentOptions != nil { return }
+        let opts: EquipmentOptionsDTO = try await APIClient.shared.request("equipment/options")
+        equipmentOptions = opts
+    }
+
+    // MARK: - Reservation (✅ sends sub_type)
+
+    func createReservation() async {
+        guard !isLoading else { return }
+        errorMessage = nil
+        successMessage = nil
+
+        guard endDate >= startDate else {
+            errorMessage = "Enddatum muss nach dem Startdatum liegen."
+            return
+        }
+
+        guard let memberId = AuthManager.shared.currentMember?.id else {
+            errorMessage = "Kein Member-ID gefunden (bitte neu einloggen)."
+            return
+        }
+
+        let startTs = Int(startDate.timeIntervalSince1970)
+        let endTs = Int(endDate.timeIntervalSince1970)
+
+        // Items bauen (✅ includes types + sub_type)
+        let items: [EquipmentReservationRequest.Item] = selected.compactMap { key in
+            guard let asset = allAssets.first(where: { $0.uniqueKey == key }) else { return nil }
+            let meta = metaByKey[key] ?? ItemMeta(notes: defaultNotes)
+
+            return EquipmentReservationRequest.Item(
+                assetType: asset.type.backendItemType,
+                assetId: asset.id,
+                quantity: 1,
+                types: meta.types,
+                subType: meta.subType,
+                notes: meta.notes.isEmpty ? nil : meta.notes
+            )
+        }
+
+        guard !items.isEmpty else {
             errorMessage = "Bitte mindestens einen Gegenstand auswählen."
             return
         }
 
-        // reservedFor optional
-        let reservedForId: Int? = {
-            let trimmed = reservedFor.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return nil }
-            return Int(trimmed)
-        }()
-
-        // Items bauen
-        let items: [CreateReservationItem] = selected.compactMap { key in
-            // key = "type:id"
-            let parts = key.split(separator: ":")
-            guard parts.count == 2,
-                  let type = EquipmentAssetType(rawValue: String(parts[0])),
-                  let id = Int(parts[1]) else { return nil }
-
-            let keyStr = "\(type.rawValue):\(id)"
-            let meta = perItemMeta[keyStr] ?? ItemMeta(types: defaultTypes, subType: defaultSubType, notes: defaultNotes)
-            return CreateReservationItem(
-                itemId: id,
-                itemType: type.backendItemType,
-                types: meta.types.isEmpty ? nil : meta.types,
-                subType: meta.subType,
-                notes: meta.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : meta.notes
-            )
-        }
-
-        // Resolve memberId from session (fallback demo)
-        if UserSession.shared.memberId == nil {
-            // TODO: Entfernen, sobald echte Auth den memberId setzt
-            UserSession.shared.memberId = 4
-        }
-        guard let memberId = UserSession.shared.memberId else {
-            errorMessage = "Kein Mitglied angemeldet (memberId fehlt)."
-            return
-        }
-
         isLoading = true
         defer { isLoading = false }
 
         do {
-            let payload = CreateReservationRequest(
+            let payload = EquipmentReservationRequest(
                 memberId: memberId,
-                reservedFor: reservedForId,
-                eventId: 0,
-                assetType: "multiple",
-                items: items
+                reservedFor: .init(start: startTs, end: endTs),
+                assetType: selectedCategory.rawValue,
+                items: items,
+                notes: defaultNotes.isEmpty ? nil : defaultNotes
             )
 
-            let resp = try await APIClient.shared.createReservation(payload)
+            let _: EquipmentReservation = try await APIClient.shared.request(
+                "reservations",
+                method: "POST",
+                body: payload
+            )
 
-            if resp.success, let id = resp.id {
-                successMessage = "Reservierung angelegt (#\(id))."
-                selected.removeAll()
-            } else {
-                errorMessage = "Reservierung konnte nicht angelegt werden."
-            }
+            successMessage = "Reservierung wurde angelegt."
+            selected.removeAll()
 
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    // Helfer für MVP: verfügbar?
-    func isAvailable(_ asset: EquipmentAsset) -> Bool {
-        (asset.status ?? "").lowercased() == "available"
+    // MARK: - Category helper
+
+    func goToNextCategory() {
+        let all = Category.allCases
+        guard let idx = all.firstIndex(of: selectedCategory) else { return }
+        selectedCategory = all[(idx + 1) % all.count]
     }
 }
-

@@ -37,7 +37,7 @@ final class AuthManager: ObservableObject {
     func bootstrap() async {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        //defer { isLoading = false }
 
         do {
             currentMember = try await APIClient.shared.me()
@@ -45,7 +45,7 @@ final class AuthManager: ObservableObject {
             await EnrollmentStore.shared.refresh()
         } catch {
             // Wenn keine Session: kein Fehler-Toast nötig
-            currentMember = nil
+            //currentMember = nil
             EnrollmentStore.shared.clear()
         }
     }

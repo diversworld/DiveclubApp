@@ -103,10 +103,15 @@ struct InstructorStudent: Codable, Identifiable {
 
         memberId = try c.decodeIfPresent(Int.self, forKey: .memberId)
 
-        // ✅ Unix timestamp seconds
-        // Wenn das Backend wirklich IMMER Zahl liefert, reicht diese Zeile.
-        // (Falls es noch null geben kann, bleibt es Optional.)
-        dateOfBirth = try c.decodeIfPresent(Int.self, forKey: .dateOfBirth)
+        // ✅ Backend liefert dateOfBirth mal als String (ggf. leer), mal als Zahl
+        if let strVal = try? c.decodeIfPresent(String.self, forKey: .dateOfBirth) {
+            let trimmed = strVal.trimmingCharacters(in: .whitespacesAndNewlines)
+            dateOfBirth = Int(trimmed)
+        } else if let intVal = try? c.decodeIfPresent(Int.self, forKey: .dateOfBirth) {
+            dateOfBirth = intVal
+        } else {
+            dateOfBirth = nil
+        }
 
         // ✅ memberGroups tolerant (memberGroups oder member_groups, Array oder String oder PHP-serialized)
         memberGroups = Self.decodeMemberGroups(from: c)
@@ -147,7 +152,9 @@ struct InstructorStudent: Codable, Identifiable {
         try c.encode(memberGroups, forKey: .memberGroups)
 
         try c.encodeIfPresent(memberId, forKey: .memberId)
-        try c.encodeIfPresent(dateOfBirth, forKey: .dateOfBirth)
+        if let ts = dateOfBirth {
+            try c.encode(String(ts), forKey: .dateOfBirth)
+        }
     }
 
     // MARK: - Convenience
@@ -264,3 +271,4 @@ private extension String {
         }
     }
 }
+

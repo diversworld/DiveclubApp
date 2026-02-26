@@ -1,157 +1,249 @@
+//
+//  EquipmentReservationCreateView.swift
+//  DiveclubApp
+//
+//  Created by Eckhard Becker on 10.02.26.
+//
 import SwiftUI
 
 struct EquipmentReservationCreateView: View {
     @StateObject private var vm = EquipmentRentalViewModel()
 
     var body: some View {
-        Form {
-            Section("Zeitraum") {
-                DatePicker("Start", selection: $vm.startDate, displayedComponents: [.date, .hourAndMinute])
-                DatePicker("Ende", selection: $vm.endDate, displayedComponents: [.date, .hourAndMinute])
-            }
+        List {
+            ZeitraumSection(startDate: $vm.startDate, endDate: $vm.endDate)
+            ReservedForSection(reservedFor: $vm.reservedFor)
+            DefaultsSection(defaultNotes: $vm.defaultNotes)
 
-            Section("Optional: Für Mitglied-ID reservieren") {
-                TextField("Mitglieds-ID (optional)", text: $vm.reservedFor)
-                    .keyboardType(.numberPad)
-            }
-
-            Section("Zusatzfelder für Items") {
-                TextField("Notes (optional)", text: $vm.defaultNotes)
-                HStack {
-                    Text("Sub-Type (optional)")
-                    Spacer()
-                    TextField("z. B. 3", value: $vm.defaultSubType, format: .number)
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.numberPad)
-                }
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Types (optional, kommasepariert)")
-                    Spacer()
-                    TextField("z. B. 1,2,3", text: Binding(
-                        get: { vm.defaultTypes.map(String.init).joined(separator: ",") },
-                        set: { input in
-                            let parts = input.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
-                            vm.defaultTypes = parts
-                        }
-                    ))
-                    .multilineTextAlignment(.trailing)
-                    .keyboardType(.numbersAndPunctuation)
-                }
-            }
-
-            Section("Auswahl") {
-                if vm.assets.isEmpty {
-                    Text("Lade Katalog...")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(vm.assets) { asset in
-                        HStack {
-                            Button {
-                                vm.toggleSelection(asset)
-                            } label: {
-                                HStack {
-                                    Image(systemName: vm.isSelected(asset) ? "checkmark.circle.fill" : "circle")
-                                    VStack(alignment: .leading) {
-                                        Text(asset.title)
-                                        if let fee = asset.fee, !fee.isEmpty {
-                                            Text("Gebühr: \(fee)")
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    if !vm.isAvailable(asset) {
-                                        Text("nicht verfügbar")
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-
-                            // Edit per-item meta
-                            NavigationLink("Bearbeiten") {
-                                PerItemMetaEditor(asset: asset, vm: vm)
-                            }
-                            .disabled(!vm.isSelected(asset))
-                        }
-                    }
-                }
-            }
+            AssetSelectionSection(vm: vm)
 
             if let err = vm.errorMessage {
-                Section {
-                    Text(err)
-                        .foregroundStyle(.red)
-                }
+                Section { Text(err).foregroundStyle(.red) }
             }
         }
         .navigationTitle("Neue Reservierung")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Reservieren") { Task { await vm.createReservation() } }
-                    .disabled(vm.selected.isEmpty)
+                Button("Reservieren") {
+                    Task { await vm.createReservation() }
+                }
+                .disabled(vm.selected.isEmpty || vm.isLoading)
             }
         }
         .task { await vm.loadAssets() }
         .refreshable { await vm.loadAssets() }
-        .alert("Erfolg", isPresented: Binding(
-            get: { vm.successMessage != nil },
-            set: { _ in vm.successMessage = nil }
-        )) {
-            Button("OK") { }
+        .alert(
+            "Erfolg",
+            isPresented: Binding(
+                get: { vm.successMessage != nil },
+                set: { _ in vm.successMessage = nil }
+            )
+        ) {
+            Button("OK") {}
         } message: {
             Text(vm.successMessage ?? "")
         }
     }
 }
+
+// MARK: - Sections
+
+private struct ZeitraumSection: View {
+    @Binding var startDate: Date
+    @Binding var endDate: Date
+
+    var body: some View {
+        Section("Zeitraum") {
+            DatePicker("Start", selection: $startDate, displayedComponents: [.date, .hourAndMinute])
+            DatePicker("Ende", selection: $endDate, displayedComponents: [.date, .hourAndMinute])
+        }
+    }
+}
+
+private struct ReservedForSection: View {
+    @Binding var reservedFor: String
+
+    var body: some View {
+        Section("Optional: Für Mitglied-ID reservieren") {
+            TextField("Mitglieds-ID (optional)", text: $reservedFor)
+                .keyboardType(.numberPad)
+        }
+    }
+}
+
+private struct DefaultsSection: View {
+    @Binding var defaultNotes: String
+
+    var body: some View {
+        Section("Zusatzfelder für Items") {
+            TextField("Notes (optional)", text: $defaultNotes)
+        }
+    }
+}
+
+private struct AssetSelectionSection: View {
+    @ObservedObject var vm: EquipmentRentalViewModel
+
+    var body: some View {
+        Section("Auswahl") {
+            if vm.isLoading {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Lade Katalog…").foregroundStyle(.secondary)
+                }
+            } else if vm.visibleAssets.isEmpty {
+                Text("Keine Artikel gefunden.").foregroundStyle(.secondary)
+            } else {
+                ForEach(vm.visibleAssets, id: \.uniqueKey) { asset in
+                    AssetRow(
+                        asset: asset,
+                        isSelected: vm.isSelected(asset),
+                        isAvailable: vm.isAvailable(asset),
+                        onToggle: { vm.toggleSelection(asset) },
+                        editor: { PerItemMetaEditor(asset: asset, vm: vm) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Row
+
+private struct AssetRow<Editor: View>: View {
+    let asset: EquipmentAsset
+    let isSelected: Bool
+    let isAvailable: Bool
+    let onToggle: () -> Void
+    @ViewBuilder let editor: () -> Editor
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Button(action: onToggle) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(asset.title)
+
+                        if let details = asset.details, !details.isEmpty {
+                            Text(details)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(4)
+                        }
+
+                        if let fee = asset.fee, !fee.isEmpty {
+                            Text("Gebühr: \(fee)")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    if !isAvailable {
+                        Text("nicht verfügbar")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink { editor() } label: { Text("Bearbeiten") }
+                .disabled(!isSelected)
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Editor (✅ types + subType)
+
 private struct PerItemMetaEditor: View {
     let asset: EquipmentAsset
     @ObservedObject var vm: EquipmentRentalViewModel
 
-    @State private var typesText: String = ""
-    @State private var subTypeValue: Int? = nil
     @State private var notesText: String = ""
+    @State private var typeKey: String? = nil
+    @State private var subTypeKey: String? = nil
+
+    private var typeOptions: [(key: String, name: String)] {
+        guard let opts = vm.equipmentOptions?.types else { return [] }
+        return opts
+            .map { (key: $0.key, name: $0.value.name) }
+            .sorted { $0.key < $1.key }
+    }
+
+    private var subTypeOptions: [(key: String, name: String)] {
+        guard
+            let t = typeKey,
+            let entry = vm.equipmentOptions?.types[t]
+        else { return [] }
+
+        return entry.subtypes
+            .map { (key: $0.key, name: $0.value) }
+            .sorted { $0.key < $1.key }
+    }
 
     var body: some View {
-        Form {
-            Section(header: Text(asset.title)) {
+        List {
+            Section(asset.title) {
                 TextField("Notes", text: $notesText)
-                HStack {
-                    Text("Sub-Type")
-                    Spacer()
-                    TextField("z. B. 3", value: $subTypeValue, format: .number)
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.numberPad)
+
+                Picker("Typ", selection: Binding(
+                    get: { typeKey ?? "" },
+                    set: { newVal in
+                        let v = newVal.isEmpty ? nil : newVal
+                        typeKey = v
+                        // Wenn Typ wechselt, Subtype resetten, falls nicht mehr gültig
+                        if v == nil { subTypeKey = nil }
+                        else if !subTypeOptions.contains(where: { $0.key == subTypeKey }) {
+                            subTypeKey = nil
+                        }
+                    }
+                )) {
+                    Text("—").tag("")
+                    ForEach(typeOptions, id: \.key) { opt in
+                        Text(opt.name).tag(opt.key)
+                    }
                 }
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Types (kommasepariert)")
-                    Spacer()
-                    TextField("z. B. 1,2,3", text: $typesText)
-                        .multilineTextAlignment(.trailing)
-                        .keyboardType(.numbersAndPunctuation)
+
+                Picker("Subtyp", selection: Binding(
+                    get: { subTypeKey ?? "" },
+                    set: { newVal in
+                        subTypeKey = newVal.isEmpty ? nil : newVal
+                    }
+                )) {
+                    Text("—").tag("")
+                    ForEach(subTypeOptions, id: \.key) { opt in
+                        Text(opt.name).tag(opt.key)
+                    }
                 }
+                .disabled(typeKey == nil)
             }
         }
         .navigationTitle("Item-Daten")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Speichern") {
-                    let types = typesText.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
-                    var meta = EquipmentRentalViewModel.ItemMeta()
-                    meta.types = types
-                    meta.subType = subTypeValue
+                    var meta = vm.meta(for: asset)
                     meta.notes = notesText
+                    meta.types = typeKey
+                    meta.subType = subTypeKey
                     vm.updateMeta(for: asset, meta)
                 }
             }
         }
         .onAppear {
             let m = vm.meta(for: asset)
-            typesText = m.types.map(String.init).joined(separator: ",")
-            subTypeValue = m.subType
             notesText = m.notes
+            typeKey = m.types
+            subTypeKey = m.subType
         }
     }
 }
 
+#Preview {
+    NavigationStack { EquipmentReservationCreateView() }
+}

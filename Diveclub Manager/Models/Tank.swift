@@ -11,6 +11,7 @@ struct Tank: Codable, Identifiable {
     let id: Int
     let serialNumber: String?
     let size: String?
+    let status: String?
     let lastInspection: Int?        // Unix Timestamp (Sekunden) oder nil
     let nextInspection: Int?        // optional, falls Backend liefert
     let ownerMemberId: Int?         // optional, falls Backend liefert (für "meine Flaschen")
@@ -19,6 +20,7 @@ struct Tank: Codable, Identifiable {
         case id
         case serialNumber = "serial_number"
         case size
+        case status
         case lastInspection = "last_inspection"
         case nextInspection = "next_inspection"
         case ownerMemberId = "owner_member_id"

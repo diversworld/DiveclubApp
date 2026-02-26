@@ -47,9 +47,9 @@ final class EnrollmentStore: ObservableObject {
     func load() async { await refresh() }
 
     func clear() {
-        enrollments = []
-        errorMessage = nil
-        isLoading = false
+        //enrollments = []
+        //errorMessage = nil
+        //isLoading = false
     }
 
     func isEnrolled(eventId: Int) -> Bool {

@@ -26,6 +26,7 @@ struct TankCheckBookItemRequest: Encodable {
     let manufacturer: String?
     let bazNumber: String?
     let size: String
+    let price: Double?      // NEU: optionaler Grundpreis je Flasche
     let o2clean: Bool
     let articles: [Int]
     let notes: String?
@@ -35,6 +36,7 @@ struct TankCheckBookItemRequest: Encodable {
         case manufacturer
         case bazNumber
         case size
+        case price
         case o2clean
         case articles
         case notes

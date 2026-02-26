@@ -4,104 +4,106 @@
 //
 //  Created by Eckhard Becker on 08.02.26.
 //
-
 import SwiftUI
 
 struct EditProfileView: View {
-    
-    @ObservedObject var vm: ProfileViewModel
-    
-    @State private var firstname = ""
-    @State private var lastname = ""
+    @State private var isLoading = false
+    @State private var isSaving = false
+
+    @State private var firstName = ""
+    @State private var lastName = ""
     @State private var email = ""
-    @State private var street = ""
-    @State private var postal = ""
-    @State private var city = ""
-    @State private var phone = ""
-    @State private var mobile = ""
-    @State private var birthDate: Date?
-    
+
+    @State private var errorMessage: String?
+    @State private var successMessage: String?
+
     var body: some View {
-        Form {
-            Section("Persönlich") {
-                TextField("Vorname", text: $firstname)
-                TextField("Nachname", text: $lastname)
+        List {
+            Section("Profil") {
+                TextField("Vorname", text: $firstName)
+                    .textContentType(.givenName)
+                TextField("Nachname", text: $lastName)
+                    .textContentType(.familyName)
                 TextField("E-Mail", text: $email)
                     .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .autocapitalization(.none)
             }
-            
-            Section("Adresse") {
-                TextField("Straße", text: $street)
-                TextField("PLZ", text: $postal)
-                TextField("Ort", text: $city)
-            }
-            
-            Section("Kontakt") {
-                TextField("Telefon", text: $phone)
-                TextField("Mobil", text: $mobile)
-            }
-            
-            Section("Geburtsdatum") {
-                DatePicker(
-                    "Geburtsdatum",
-                    selection: Binding(
-                        get: { birthDate ?? Date() },
-                        set: { birthDate = $0 }
-                    ),
-                    displayedComponents: .date
-                )
-            }
-            
-            Button {
-                Task {
-                    await vm.save(
-                        firstname: firstname,
-                        lastname: lastname,
-                        email: email,
-                        street: street,
-                        postal: postal,
-                        city: city,
-                        phone: phone,
-                        mobile: mobile,
-                        dateOfBirth: birthDate
-                    )
+
+            Section {
+                Button {
+                    Task { await save() }
+                } label: {
+                    HStack {
+                        if isSaving { ProgressView() }
+                        Text("Speichern")
+                    }
                 }
-            } label: {
-                if vm.isSaving {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Text("Speichern")
-                        .frame(maxWidth: .infinity)
-                }
+                .disabled(isSaving || firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+
+            if let err = errorMessage {
+                Section { Text(err).foregroundStyle(.red) }
             }
         }
         .navigationTitle("Profil bearbeiten")
-        .onAppear {
-            guard let m = vm.member else { return }
-            firstname = m.firstname ?? ""
-            lastname = m.lastname ?? ""
-            email = m.email ?? ""
-            street = m.street ?? ""
-            postal = m.postal ?? ""
-            city = m.city ?? ""
-            phone = m.phone ?? ""
-            mobile = m.mobile ?? ""
-            birthDate = m.birthDate
+        .task { await load() }
+        .refreshable { await load() }
+        .alert("Erfolg", isPresented: Binding(
+            get: { successMessage != nil },
+            set: { _ in successMessage = nil }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(successMessage ?? "")
         }
-        .overlay(alignment: .top) {
-            if vm.saveSuccess {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                    Text("Gespeichert")
-                }
-                .padding()
-                .background(.green)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding()
-                .transition(.move(edge: .top))
-            }
+    }
+
+    private struct MeDTO: Decodable {
+        let firstName: String?
+        let lastName: String?
+        let email: String?
+    }
+
+    private struct SavePayload: Encodable {
+        let firstName: String
+        let lastName: String
+        let email: String
+    }
+
+    @MainActor
+    private func load() async {
+        guard !isLoading else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let me: MeDTO = try await APIClient.shared.request("me", method: "GET")
+            firstName = me.firstName ?? ""
+            lastName = me.lastName ?? ""
+            email = me.email ?? ""
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func save() async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let payload = SavePayload(
+                firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                email: email.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            try await APIClient.shared.requestWithoutResponse("me", method: "POST", body: payload)
+            successMessage = "Profil gespeichert."
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

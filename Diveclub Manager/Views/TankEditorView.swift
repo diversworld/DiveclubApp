@@ -22,7 +22,7 @@ struct TankEditorView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        Form {
+        SwiftUI.Form {
             Section("Flasche") {
                 TextField("Bezeichnung", text: $nickname)
                 TextField("Seriennummer", text: $serialNumber)

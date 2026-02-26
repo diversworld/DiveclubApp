@@ -264,7 +264,7 @@ extension APIClient {
         try await request("reservations/\(id)", method: "GET")
     }
 
-    func createReservation(_ payload: CreateReservationRequest) async throws -> CreateReservationResponse {
+    func createReservation(_ payload: CreateReservationRequest) async throws -> EquipmentReservation {
         try await request("reservations", method: "POST", body: payload)
     }
 }
@@ -308,4 +308,51 @@ extension APIClient {
 private struct LoginPayload: Codable {
     let username: String
     let password: String
+}
+
+extension APIClient {
+
+    /// Testet Erreichbarkeit gegen eine frei eingegebene BaseURL (Settings tempURL).
+    /// Erfolg bei 2xx ODER 401/403 (Server erreichbar, aber nicht eingeloggt).
+    func testConnection(baseURLString: String) async throws -> Bool {
+        let raw = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let base = URL(string: raw) else { throw APIError.invalidURL }
+
+        // Wenn baseURL bereits auf .../api zeigt, NICHT nochmal "/api" davor setzen.
+        let basePath = base.path
+        let needsApiPrefix = !basePath.hasSuffix("/api") && !basePath.hasSuffix("/api/")
+
+        func normalizedPath(_ path: String) -> String {
+            if path.hasPrefix("/api/") { return String(path.dropFirst(4)) }
+            if path.hasPrefix("/") { return path }
+            return "/" + path
+        }
+
+        func buildURL(_ path: String) -> URL? {
+            let fullPath = (needsApiPrefix ? "/api" : "") + normalizedPath(path)
+            return URL(string: fullPath, relativeTo: base)
+        }
+
+        // Kandidaten: /me (klein), /events (oft public-ish)
+        for path in ["me", "events"] {
+            guard let url = buildURL(path) else { continue }
+
+            var req = URLRequest(url: url)
+            req.httpMethod = "GET"
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+            req.timeoutInterval = 8
+
+            do {
+                let (_, resp) = try await URLSession.shared.data(for: req)
+                if let http = resp as? HTTPURLResponse {
+                    if (200...299).contains(http.statusCode) { return true }
+                    if http.statusCode == 401 || http.statusCode == 403 { return true }
+                }
+            } catch {
+                continue
+            }
+        }
+
+        return false
+    }
 }

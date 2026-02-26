@@ -43,9 +43,18 @@ struct EquipmentReservation: Decodable, Identifiable {
 }
 
 struct EquipmentReservationItem: Decodable, Identifiable {
+    let types: String?
+    let subType: String?
     let itemId: Int?
     let itemType: String?
     let reservationStatus: String?
+
+    // Timestamps (Unix seconds)
+    let reservedAt: Int?
+    let pickedUpAt: Int?
+    let returnedAt: Int?
+    let createdAt: Int?
+    let updatedAt: Int?
 
     // stabile "synthetische" ID (weil items evtl. keine eigene id liefern)
     var id: String { "\(itemType ?? "unknown")-\(itemId ?? 0)" }
@@ -54,5 +63,12 @@ struct EquipmentReservationItem: Decodable, Identifiable {
         case itemId = "item_id"
         case itemType = "item_type"
         case reservationStatus = "reservation_status"
+        case types
+        case subType = "sub_type"
+        case reservedAt = "reserved_at"
+        case pickedUpAt = "picked_up_at"
+        case returnedAt = "returned_at"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 }

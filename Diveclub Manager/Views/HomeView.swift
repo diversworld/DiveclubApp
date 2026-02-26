@@ -16,11 +16,14 @@ private func makeImageURL(_ path: String?) -> URL? {
 
 struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
+    @StateObject private var auth = AuthManager.shared
 
     @State private var selectedNewsId: Int? = nil
     @State private var showLogin = false
     @State private var showSettings = false
     @State private var showRefreshedBanner = false
+
+    private var isLoggedIn: Bool { auth.isLoggedIn }
 
     // Höhe der fixen Fußzeile (damit ScrollView unten Platz lässt)
     private let bottomBarHeight: CGFloat = 86
@@ -34,17 +37,72 @@ struct HomeView: View {
             content
         }
         .task { await vm.load() }
+        .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            if isLoggedIn {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            // Optional: Navigate to Profile if available
+                            // e.g., open a ProfileView if desired
+                        } label: {
+                            Label("Profil", systemImage: "person.circle")
+                        }
 
+                        Button {
+                            // Optional: Open settings for logged-in user if needed
+                            showSettings = true
+                        } label: {
+                            Label("Einstellungen", systemImage: "gearshape")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            Task { await AuthManager.shared.logout() }
+                        } label: {
+                            Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showLogin = true
+                    } label: {
+                        Image(systemName: "person.badge.key")
+                    }
+                }
+            }
+        }
         .sheet(item: Binding(
             get: { selectedNewsId.map(IdentifiedInt.init) },
             set: { selectedNewsId = $0?.value }
         )) { item in
             NavigationStack { NewsDetailView(newsId: item.value) }
         }
-        .sheet(isPresented: $showLogin) {
+        .sheet(isPresented: Binding(
+            get: { showLogin && !isLoggedIn },
+            set: { showLogin = $0 }
+        )) {
             NavigationStack { LoginView() }
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: Binding(
+            get: { showSettings && !isLoggedIn },
+            set: { showSettings = $0 }
+        )) {
             NavigationStack { SettingsView().navigationTitle("Einstellungen") }
         }
         .overlay(alignment: .top) {
@@ -99,7 +157,6 @@ struct HomeView: View {
                         newsSection
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, bottomBarHeight) // ✅ Platz für fixe Fußzeile
                 }
                 .refreshable {
                     let generator = UINotificationFeedbackGenerator()
@@ -116,17 +173,7 @@ struct HomeView: View {
                     }
                 }
                 // ✅ Fußzeile fest “angedockt”, wie TabBar
-                .safeAreaInset(edge: .bottom) {
-                    bottomActions
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 0)
-                        .padding(.top, 16)
-                        .background(.ultraThinMaterial)
-                        .overlay {
-                            // dünne Trennlinie oben, wie bei TabBars
-                            VStack { Spacer() }
-                        }
-                }
+                
             }
         }
     }
@@ -277,12 +324,9 @@ struct HomeView: View {
     // MARK: - Bottom actions (unverändert)
     private var bottomActions: some View {
         VStack(spacing: 12) {
-            //Divider().padding(.vertical, 2)
-
             HStack {
                 Button { showLogin = true } label: {
                     Image(systemName: "person.badge.key").imageScale(.large)
-                    //Label("Login", systemImage: "person.badge.key")
                 }
                 .buttonStyle(.bordered)
 
@@ -329,3 +373,4 @@ private struct StatusBarBackground: View {
 #Preview {
     NavigationStack { HomeView() }
 }
+

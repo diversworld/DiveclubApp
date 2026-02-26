@@ -17,7 +17,7 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            Image("Diversworld")
+            Image("Icon-1024x1024-1024")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 90, height: 90)

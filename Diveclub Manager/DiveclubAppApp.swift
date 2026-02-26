@@ -11,21 +11,16 @@ import SwiftUI
 struct DiveclubAppApp: App {
 
     @StateObject private var auth = AuthManager.shared
+    @StateObject private var settings = AppSettingsManager.shared
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if auth.isLoading {
-                    ProgressView("Session wird geprüft …")
-                } else if auth.isLoggedIn {
-                    MainTabView()
-                } else {
-                    HomeView()
+            MainTabView()
+                .environmentObject(auth)
+                .environmentObject(settings)
+                .task {
+                    await auth.bootstrap()
                 }
-            }
-            .task {
-                await auth.bootstrap()
-            }
         }
     }
 }

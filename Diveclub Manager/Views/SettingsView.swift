@@ -6,46 +6,49 @@
 //
 
 import SwiftUI
+import WebKit
 
 struct SettingsView: View {
-
-    @StateObject private var settings = AppSettingsManager.shared
+    @EnvironmentObject private var settings: AppSettingsManager
 
     @State private var tempURL: String = ""
     @State private var isTesting = false
-    @State private var testResult: Bool?
+    @State private var testResult: Bool? = nil
+    @State private var testMessage: String? = nil
+    
+    // ✅ Feedback für "Übernehmen"
+    @State private var didSave = false
+    @State private var saveMessage: String? = nil
 
     var body: some View {
         Form {
-
-            Section("Sicherheit") {
-                Stepper(
-                    "Timeout: \(Int(settings.timeout)) Sekunden",
-                    value: Binding(
-                        get: { settings.timeout },
-                        set: { settings.updateTimeout($0) }
-                    ),
-                    in: 30...600,
-                    step: 30
-                )
-            }
-
             Section("Server") {
-                TextField("API Base URL", text: $tempURL)
-                    .keyboardType(.URL)
+                TextField("Base URL", text: $tempURL)
                     .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
                     .autocorrectionDisabled(true)
 
-                if !settings.isValidURL(tempURL) && !tempURL.isEmpty {
-                    Text("Ungültige URL. Nur https ist erlaubt.")
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-                
-                Button("Übernehmen") {
-                    settings.updateBaseURL(tempURL)
+                Button {
+                    applyBaseURL()
+                } label: {
+                    HStack {
+                        Text("Übernehmen")
+                        Spacer()
+                        if didSave {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                    }
                 }
                 .disabled(!settings.isValidURL(tempURL))
+
+                if let msg = saveMessage, !msg.isEmpty {
+                    Text(msg)
+                        .font(.footnote)
+                        .foregroundStyle(.green)
+                        .transition(.opacity)
+                }
+
                 Divider()
 
                 Button {
@@ -53,81 +56,179 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Text("Verbindung testen")
-
                         Spacer()
 
                         if isTesting {
                             ProgressView()
                         } else if let result = testResult {
                             Image(systemName: result ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundColor(result ? .green : .red)
+                                .foregroundStyle(result ? .green : .red)
                         }
                     }
                 }
                 .disabled(!settings.isValidURL(tempURL) || isTesting)
+
+                if let msg = testMessage, !msg.isEmpty {
+                    Text(msg)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .onAppear {
-                tempURL = settings.baseURL
-            }
-                
+            
             Section("Rechtliches") {
-                NavigationLink("Impressum") { LegalTextView(title: "Impressum", text: AppLegal.imprint) }
-                NavigationLink("Datenschutz") { LegalTextView(title: "Datenschutz", text: AppLegal.privacy) }
-                NavigationLink("Nutzungsbedingungen") { LegalTextView(title: "Nutzungsbedingungen", text: AppLegal.terms) }
+                if settings.isLoadingConfig {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Lade Inhalte…")
+                            .foregroundStyle(.secondary)
+                    }
+                } else if let err = settings.configError {
+                    Text("Hinweis: \(err)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                NavigationLink("Impressum") {
+                    LegalHTMLView(title: "Impressum", html: settings.imprintHTML)
+                }
+                .disabled(settings.imprintHTML.isEmpty)
+
+                NavigationLink("Datenschutz") {
+                    LegalHTMLView(title: "Datenschutz", html: settings.privacyHTML)
+                }
+                .disabled(settings.privacyHTML.isEmpty)
+
+                NavigationLink("Nutzungsbedingungen") {
+                    LegalHTMLView(title: "Nutzungsbedingungen", html: settings.termsHTML)
+                }
+                .disabled(settings.termsHTML.isEmpty)
             }
+            
+            Section {
+                HStack {
+                    Text("App-Version")
+                    Spacer()
+                    Text(settings.appVersionString)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            // Rechtliches aktuell NICHT in AppSettingsManager vorhanden.
+            // Entweder hier entfernen oder AppSettingsManager um Texte ergänzen.
         }
         .navigationTitle("Einstellungen")
         .onAppear {
             tempURL = settings.baseURL
+            Task { await settings.reloadRemoteConfig() }
         }
     }
 
     // MARK: - Save
 
-    private func saveURL() {
-        let url = tempURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        settings.updateBaseURL(url)
-        tempURL = url
-    }
+        private func applyBaseURL() {
+            let trimmed = tempURL.trimmingCharacters(in: .whitespacesAndNewlines)
 
-    // MARK: - Test
+            guard settings.isValidURL(trimmed) else {
+                withAnimation {
+                    didSave = false
+                    saveMessage = "Bitte eine gültige https-URL eingeben."
+                }
+                return
+            }
 
+            settings.updateBaseURL(trimmed)
+
+            // Erfolg anzeigen
+            withAnimation {
+                didSave = true
+                saveMessage = "Gespeichert ✅"
+            }
+
+            // Ergebnis vom Verbindungstest zurücksetzen (weil neue URL)
+            testResult = nil
+            testMessage = nil
+
+            // nach kurzer Zeit ausblenden
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                withAnimation {
+                    didSave = false
+                    saveMessage = nil
+                }
+            }
+        }
+    
+    // MARK: - Connection Test
+    
     private func runConnectionTest() async {
-        testResult = nil
+        guard settings.isValidURL(tempURL) else { return }
+
         isTesting = true
+        testResult = nil
+        testMessage = nil
         defer { isTesting = false }
 
-        let ok = await testConnection(to: tempURL)
-        testResult = ok
+        do {
+            let ok = try await APIClient.shared.testConnection(baseURLString: tempURL)
+            testResult = ok
+            testMessage = ok ? "Verbindung erfolgreich." : "Keine Verbindung möglich."
+        } catch {
+            testResult = false
+            testMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+// MARK: - HTML View (WKWebView)
+
+private struct LegalHTMLView: View {
+    let title: String
+    let html: String
+
+    var body: some View {
+        Group {
+            if html.isEmpty {
+                ContentUnavailableView("Keine Daten", systemImage: "doc.text", description: Text("Kein Inhalt verfügbar."))
+            } else {
+                WebViewHTML(html: wrapInHTMLDocument(html))
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// Ping gegen `.../api/auth/me` (oder ändere den Pfad auf deinen Health-Endpoint)
-    private func testConnection(to base: String) async -> Bool {
-        do {
-            var normalized = base.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !normalized.hasSuffix("/") { normalized += "/" }
+    /// Backend liefert HTML-Fragmente → wir verpacken sie in ein vollständiges HTML-Dokument
+    private func wrapInHTMLDocument(_ fragment: String) -> String {
+        """
+        <!doctype html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { font-family: -apple-system, Helvetica, Arial; padding: 16px; }
+              h1,h2,h3 { margin-top: 1.2em; }
+              a { word-break: break-word; }
+            </style>
+          </head>
+          <body>
+            \(fragment)
+          </body>
+        </html>
+        """
+    }
+}
 
-            guard let baseURL = URL(string: normalized),
-                  let url = URL(string: "api/me", relativeTo: baseURL) else { return false }
+private struct WebViewHTML: UIViewRepresentable {
+    let html: String
 
-            var req = URLRequest(url: url)
-            req.httpMethod = "GET"
-            req.setValue("application/json", forHTTPHeaderField: "Accept")
+    func makeUIView(context: Context) -> WKWebView {
+        let web = WKWebView(frame: .zero)
+        web.isOpaque = false
+        web.backgroundColor = .clear
+        web.scrollView.backgroundColor = .clear
+        return web
+    }
 
-            // Wenn auth/me Token braucht, wird es ohne Token 401 liefern.
-            // Dann lieber /health oder /ping testen (public).
-            // req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-
-            let (_, response) = try await URLSession.shared.data(for: req)
-            guard let http = response as? HTTPURLResponse else { return false }
-
-            // 200...299 = Server erreichbar und OK
-            return (200...299).contains(http.statusCode) || http.statusCode == 401
-        } catch {
-            #if DEBUG
-            print("❌ testConnection(to:) failed:", error.localizedDescription)
-            #endif
-            return false
-        }
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        uiView.loadHTMLString(html, baseURL: nil)
     }
 }

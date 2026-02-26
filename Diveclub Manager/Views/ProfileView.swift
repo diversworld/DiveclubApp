@@ -5,7 +5,6 @@
 //  Created by Eckhard Becker on 07.02.26.
 //
 
-
 import SwiftUI
 
 struct ProfileView: View {
@@ -110,9 +109,9 @@ extension ProfileView {
     private var actionsCard: some View {
         VStack(spacing: 0) {
 
-            // ✅ HIER IST DER NavigationLink, den du vermisst hast
+            // ✅ FIX: ChangePasswordView ohne Parameter aufrufen
             NavigationLink {
-                ChangePasswordView(vm: vm)
+                ChangePasswordView()
             } label: {
                 rowLinkLabel(
                     title: "Passwort ändern",

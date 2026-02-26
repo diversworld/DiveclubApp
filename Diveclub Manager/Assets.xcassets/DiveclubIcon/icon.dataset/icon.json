@@ -1,0 +1,73 @@
+{
+  "fill" : {
+    "solid" : "extended-gray:0.75000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "Icon-20x20@3x-60.png",
+          "name" : "Icon-20x20@3x-60"
+        },
+        {
+          "image-name" : "Icon-29x29@2x-58.png",
+          "name" : "Icon-29x29@2x-58"
+        },
+        {
+          "image-name" : "Icon-29x29@3x-87.png",
+          "name" : "Icon-29x29@3x-87"
+        },
+        {
+          "image-name" : "Icon-40x40@2x-80.png",
+          "name" : "Icon-40x40@2x-80"
+        },
+        {
+          "image-name" : "Icon-40x40@3x-120.png",
+          "name" : "Icon-40x40@3x-120"
+        },
+        {
+          "image-name" : "Icon-60x60@2x-120.png",
+          "name" : "Icon-60x60@2x-120"
+        },
+        {
+          "image-name" : "Icon-60x60@3x-180.png",
+          "name" : "Icon-60x60@3x-180"
+        },
+        {
+          "image-name" : "Icon-76x76@1x-76.png",
+          "name" : "Icon-76x76@1x-76"
+        },
+        {
+          "image-name" : "Icon-76x76@2x-152.png",
+          "name" : "Icon-76x76@2x-152"
+        },
+        {
+          "image-name" : "Icon-83.5x83.5@2x-167.png",
+          "name" : "Icon-83.5x83.5@2x-167"
+        },
+        {
+          "image-name" : "Icon-1024x1024@1x-1024.png",
+          "name" : "Icon-1024x1024@1x-1024"
+        },
+        {
+          "image-name" : "Icon-20x20@2x-40.png",
+          "name" : "Icon-20x20@2x-40"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

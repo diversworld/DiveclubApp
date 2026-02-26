@@ -50,11 +50,27 @@ struct MainTabView: View {
                 }
                 .tabItem { Label("TÜV", systemImage: "checkmark.seal") }
 
-                NavigationStack {
+                /*NavigationStack {
                     EquipmentView()
                         .navigationTitle("Equipment")
                 }
                 .tabItem { Label("Equipment", systemImage: "shippingbox") }
+                */
+                NavigationStack {
+                    EquipmentReservationsView()
+                        .navigationTitle("Equipment Verleih")
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                NavigationLink {
+                                    ReservationView()
+                                        .navigationTitle("Neue Reservierung")
+                                } label: {
+                                    Image(systemName: "plus")
+                                }
+                            }
+                        }
+                }
+                .tabItem { Label("Equipment Verleih", systemImage: "tray.full") }
 
                 NavigationStack {
                     ProfileView()

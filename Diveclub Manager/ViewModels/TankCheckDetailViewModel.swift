@@ -168,7 +168,8 @@ final class TankCheckDetailViewModel: ObservableObject {
             manufacturer: item.manufacturer,
             bazNumber: item.bazNumber,
             size: item.size,
-            o2clean: item.o2clean
+            o2clean: item.o2clean,
+            ownerMemberId: AuthManager.shared.currentMemberIdInt
         )
         tankStore.addOrUpdate(tank)
     }
@@ -208,6 +209,7 @@ final class TankCheckDetailViewModel: ObservableObject {
                 manufacturer: it.manufacturer.isEmpty ? nil : it.manufacturer,
                 bazNumber: it.bazNumber.isEmpty ? nil : it.bazNumber,
                 size: it.size,
+                price: (priceForItem(it) as NSDecimalNumber).doubleValue,
                 o2clean: it.o2clean,
                 articles: articleIds(for: it),
                 notes: it.notes.isEmpty ? nil : it.notes
@@ -227,9 +229,19 @@ final class TankCheckDetailViewModel: ObservableObject {
         #endif
 
         do {
-            _ = try await APIClient.shared.bookTankCheck(payload)
+            let response = try await APIClient.shared.bookTankCheck(payload)
+
+            #if DEBUG
+            print("⬅️ Response (dump):")
+            dump(response)
+            print("⬅️ success=\(response.success ?? false), id=\(String(describing: response.id))")
+            #endif
+
             bookingSuccess = true
         } catch {
+            #if DEBUG
+            print("❌ Booking failed: \(error)")
+            #endif
             bookingError = describe(error)
         }
     }
@@ -243,3 +255,4 @@ final class TankCheckDetailViewModel: ObservableObject {
         return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 }
+

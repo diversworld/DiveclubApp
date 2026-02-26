@@ -12,18 +12,16 @@ enum EquipmentAssetType: String, Codable, CaseIterable {
     case tank
     case regulator
 
-    /// Backend erwartet: item_type (string). Du kannst hier die Werte festlegen.
-    /// WICHTIG: Diese Strings müssen zu deinem Backend passen!
     var backendItemType: String {
         switch self {
-        case .equipment: return "equipment"
-        case .tank: return "tank"
-        case .regulator: return "regulator"
+        case .equipment: return "tl_dc_equipment"
+        case .tank: return "tl_dc_tanks"
+        case .regulator: return "tl_dc_regulators"
         }
     }
 }
 
-struct EquipmentAsset: Identifiable, Equatable {
+struct EquipmentAsset: Identifiable, Equatable, Codable {
     let id: Int
     let type: EquipmentAssetType
 
@@ -31,4 +29,6 @@ struct EquipmentAsset: Identifiable, Equatable {
     let status: String?
     let fee: String?
     let details: String?
+
+    var uniqueKey: String { "\(type.rawValue):\(id)" }
 }

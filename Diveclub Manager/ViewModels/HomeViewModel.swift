@@ -10,18 +10,6 @@ import Combine
 
 // MARK: - DTOs
 
-struct AppConfigDTO: Codable {   // ✅ Codable (für Cache)
-    let activateApi: Bool?
-    let logo: String?
-    let infoText: String?
-    let newsArchive: Int?
-
-    // ✅ Rechtliches aus Config
-    let imprint: String?
-    let privacy: String?
-    let terms: String?
-}
-
 struct NewsItemDTO: Codable, Identifiable {  // ✅ Codable (für Cache)
     let id: Int
     let headline: String

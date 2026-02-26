@@ -15,6 +15,7 @@ struct SavedTank: Codable, Identifiable, Equatable {
     var bazNumber: String
     var size: String
     var o2clean: Bool
+    var ownerMemberId: Int?   // NEU: Zugehöriger Nutzer
 
     init(
         id: UUID = UUID(),
@@ -22,7 +23,8 @@ struct SavedTank: Codable, Identifiable, Equatable {
         manufacturer: String = "",
         bazNumber: String = "",
         size: String,
-        o2clean: Bool = false
+        o2clean: Bool = false,
+        ownerMemberId: Int? = nil
     ) {
         self.id = id
         self.serialNumber = serialNumber
@@ -30,6 +32,7 @@ struct SavedTank: Codable, Identifiable, Equatable {
         self.bazNumber = bazNumber
         self.size = size
         self.o2clean = o2clean
+        self.ownerMemberId = ownerMemberId
     }
 }
 
@@ -38,6 +41,12 @@ final class TankStore: ObservableObject {
     static let shared = TankStore()
 
     @Published private(set) var tanks: [SavedTank] = []
+
+    // Nur Tanks des aktuell angemeldeten Nutzers
+    var tanksForCurrentUser: [SavedTank] {
+        guard let uid = AuthManager.shared.currentMemberIdInt else { return [] }
+        return tanks.filter { $0.ownerMemberId == uid }
+    }
 
     private let key = "savedTanks.v1"
 
@@ -81,3 +90,4 @@ final class TankStore: ObservableObject {
         }
     }
 }
+

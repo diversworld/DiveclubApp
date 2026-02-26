@@ -28,11 +28,11 @@ final class CourseDetailViewModel: ObservableObject {
     func loadHeader() async {
         guard !isLoadingHeader else { return }
 
-        // ✅ verhindert "Publishing changes from within view updates..."
+        // Verhindert "Publishing changes from within view updates..." indem wir zuerst yielden
         await Task.yield()
 
-        headerError = nil
-        isLoadingHeader = true
+        //headerError = nil
+        //isLoadingHeader = true
         defer { isLoadingHeader = false }
 
         guard let eventId = enrollment.eventId else {
@@ -51,11 +51,11 @@ final class CourseDetailViewModel: ObservableObject {
     }
 
     func loadScheduleIfNeeded() async {
+        // Verhindert "Publishing changes from within view updates..."
+        await Task.yield()
+
         guard schedule.isEmpty else { return }
         guard !isLoadingSchedule else { return }
-
-        // ✅ verhindert "Publishing changes from within view updates..."
-        await Task.yield()
 
         guard let eventId = enrollment.eventId else {
             scheduleError = "Kein event_id vorhanden."
@@ -82,3 +82,4 @@ final class CourseDetailViewModel: ObservableObject {
         return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 }
+
