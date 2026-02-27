@@ -25,22 +25,6 @@ final class ReservationViewModel: ObservableObject {
         let displaySubtitle: String?
     }
 
-    // MARK: - Options DTOs
-
-    struct RegulatorOptionsDTO: Decodable {
-        struct RegModels: Decodable {
-            let regModel1st: [String: String]
-            let regModel2nd: [String: String]
-        }
-        let manufacturers: [String: String]
-        let regulators: [String: RegModels]
-    }
-
-    struct SizesOptionsDTO: Decodable {
-        let sizes: [String: String]
-        let manufacturers: [String: String]
-    }
-
     // MARK: - Category
 
     enum Category: CaseIterable, Identifiable {
@@ -166,33 +150,96 @@ final class ReservationViewModel: ObservableObject {
                 availableItems = map
 
             case .regulator:
-                // ✅ volle DTOs nutzen -> displaySubtitle enthält Models + SNs + Notes
+                // 1) Optionen laden (Klartext-Mapping)
+                let opts: RegulatorOptionsDTO = try await APIClient.shared.request("regulator/options")
+                self.regulatorOptions = opts
+
+                // 2) Regler laden
                 let regs: [RegulatorDTO] = try await APIClient.shared.request("regulators")
                 let available = regs.filter { ($0.status ?? "").lowercased() == "available" }
 
                 var map: [Int: ItemDisplay] = [:]
                 for r in available {
+
+                    let manLabel = regManufacturerLabel(r.manufacturer)
+
+                    let m1 = regModel1Label(manufacturerId: r.manufacturer, modelKey: r.regModel1st)
+                    let m2p = regModel2Label(manufacturerId: r.manufacturer, modelKey: r.regModel2ndPri)
+                    let m2s = regModel2Label(manufacturerId: r.manufacturer, modelKey: r.regModel2ndSec)
+
+                    let subtitleParts: [String] = [
+                        manLabel.map { "Hersteller: \($0)" },
+
+                        r.serialNumber1st?.isEmpty == false ? "1. Stufe: \(r.serialNumber1st!)" : nil,
+                        m1?.isEmpty == false ? "Modell 1. Stufe: \(m1!)" : nil,
+
+                        r.serialNumber2ndPri?.isEmpty == false ? "2. Stufe (prim): \(r.serialNumber2ndPri!)" : nil,
+                        m2p?.isEmpty == false ? "Modell 2. Stufe (prim): \(m2p!)" : nil,
+
+                        r.serialNumber2ndSec?.isEmpty == false ? "2. Stufe (sec): \(r.serialNumber2ndSec!)" : nil,
+                        m2s?.isEmpty == false ? "Modell 2. Stufe (sec): \(m2s!)" : nil,
+
+                        r.notes?.isEmpty == false ? r.notes : nil
+                    ].compactMap { $0 }
+
                     map[r.id] = ItemDisplay(
                         title: r.displayTitle,
-                        subtitle: r.displaySubtitle,   // ✅ Modell 1st/2ndPri/2ndSec + Seriennummern
+                        subtitle: subtitleParts.isEmpty ? nil : subtitleParts.joined(separator: "\n"),
                         groupTitle: nil
                     )
                 }
                 availableItems = map
 
             case .equipment:
-                // ✅ volle DTOs nutzen -> displaySubtitle enthält Labels, Hersteller, Größe, Modell, Farbe, Notes
                 let eq: [EquipmentDTO] = try await APIClient.shared.request("equipment")
+                let opts: EquipmentOptionsDTO = try await APIClient.shared.request("equipment/options")
+                let sizes: SizesOptionsDTO = try await APIClient.shared.request("sizes/options")
+                
+                self.equipmentOptions = opts
+                self.sizesOptions = sizes
+
                 let available = eq.filter { ($0.status ?? "").lowercased() == "available" }
+
+                // ✅ Index für spätere Submit Payload (types/subType)
+                self.equipmentIndex = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
 
                 var map: [Int: ItemDisplay] = [:]
                 for e in available {
+
+                    // ✅ Gruppierung: Type-Label aus options
+                    let group = typeLabel(for: e.types) ?? e.type_label ?? ""
+
+                    // ✅ Subtype, Hersteller, Größe auflösen
+                    let stLbl = subTypeLabel(for: e.types, subKey: e.sub_type) ?? e.sub_type_label
+                    let manLbl: String? = {
+                        if let key = e.manufacturer, let v = equipmentOptions?.manufacturers[key] { return v }
+                        if let key = e.manufacturer, let v = sizesOptions?.manufacturers[key] { return v }
+                        return e.manufacturer_label ?? e.manufacturer
+                    }()
+
+                    let sizeLbl: String? = {
+                        // EquipmentDTO.size ist Int? → für options key als String
+                        if let s = e.size, let v = sizesOptions?.sizes[String(s)] { return v }
+                        if let s = e.size, let v = equipmentOptions?.sizes[String(s)] { return v }
+                        return e.size_label
+                    }()
+
+                    let subtitleParts: [String] = [
+                        stLbl?.isEmpty == false ? stLbl : nil,
+                        manLbl?.isEmpty == false ? "Hersteller: \(manLbl!)" : nil,
+                        sizeLbl?.isEmpty == false ? "Größe: \(sizeLbl!)" : nil,
+                        e.model?.isEmpty == false ? "Modell: \(e.model!)" : nil,
+                        e.color?.isEmpty == false ? "Farbe: \(e.color!)" : nil,
+                        e.notes?.isEmpty == false ? e.notes : nil
+                    ].compactMap { $0 }
+
                     map[e.id] = ItemDisplay(
                         title: e.displayTitle,
-                        subtitle: e.displaySubtitle,
-                        groupTitle: e.type_label // ✅ Gruppierung nach Typ-Label (z.B. "Anzug", "Maske", ...)
+                        subtitle: subtitleParts.isEmpty ? nil : subtitleParts.joined(separator: "\n"),
+                        groupTitle: group.isEmpty ? nil : group
                     )
                 }
+
                 availableItems = map
             }
         } catch {
@@ -206,7 +253,17 @@ final class ReservationViewModel: ObservableObject {
     func addSelectedItem(selectedId: Int?, notes: String?) {
         guard let id = selectedId else { return }
 
-        // ✅ hole Anzeige aus availableItems (dort baust du bei Reglern bereits Models zusammen!)
+        // ✅ eindeutiger Key pro Kategorie/AssetType + id
+        let itemType = selectedCategory.assetType
+
+        // ✅ bereits ausgewählt? -> nichts tun
+        let alreadySelected = selectedDrafts.contains { $0.itemType == itemType && $0.itemId == id }
+        if alreadySelected {
+            // optional: kleine Meldung (wenn du willst, füge @Published duplicateMessage hinzu)
+            return
+        }
+
+        // Anzeige aus availableItems
         let display = availableItems[id]
         let title = display?.title ?? "#\(id)"
         let subtitle = display?.subtitle
@@ -234,7 +291,7 @@ final class ReservationViewModel: ObservableObject {
                     subType: nil,
                     notes: notes,
                     displayTitle: title,
-                    displaySubtitle: subtitle // ✅ enthält jetzt regModel1st/2ndPri/2ndSec Labels
+                    displaySubtitle: subtitle
                 )
             )
 
@@ -313,5 +370,22 @@ final class ReservationViewModel: ObservableObject {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             reservations = []
         }
+    }
+    
+    // MARK: - Label mapping helpers (Regulator)
+
+    private func regManufacturerLabel(_ manufacturerId: String?) -> String? {
+        guard let id = manufacturerId else { return nil }
+        return regulatorOptions?.manufacturers[id] ?? manufacturerId
+    }
+
+    private func regModel1Label(manufacturerId: String?, modelKey: String?) -> String? {
+        guard let man = manufacturerId, let key = modelKey else { return nil }
+        return regulatorOptions?.regulators[man]?.regModel1st[key] ?? modelKey
+    }
+
+    private func regModel2Label(manufacturerId: String?, modelKey: String?) -> String? {
+        guard let man = manufacturerId, let key = modelKey else { return nil }
+        return regulatorOptions?.regulators[man]?.regModel2nd[key] ?? modelKey
     }
 }

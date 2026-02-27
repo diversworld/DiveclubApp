@@ -261,7 +261,7 @@ extension APIClient {
     }
 
     func getReservation(id: Int) async throws -> EquipmentReservation {
-        try await request("reservations/\(id)", method: "GET")
+        try await request("reservation/\(id)", method: "GET")
     }
 
     func createReservation(_ payload: CreateReservationRequest) async throws -> EquipmentReservation {

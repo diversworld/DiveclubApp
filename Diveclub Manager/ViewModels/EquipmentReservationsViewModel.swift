@@ -10,9 +10,10 @@ import Combine
 
 @MainActor
 final class EquipmentReservationsViewModel: ObservableObject {
-    @Published var reservations: [EquipmentReservation] = []
+
     @Published var isLoading = false
-    @Published var errorMessage: String?
+    @Published var errorMessage: String? = nil
+    @Published var reservations: [ReservationDTO] = []
 
     func load() async {
         isLoading = true
@@ -20,11 +21,15 @@ final class EquipmentReservationsViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let result: [EquipmentReservation] = try await APIClient.shared.request("reservations")
-            reservations = result
+            // je nach deiner APIClient-Normalisierung: "reservations" oder "/reservations"
+            let list: [ReservationDTO] = try await APIClient.shared.request("reservations")
+
+            // optional: sortieren nach Datum (neueste zuerst)
+            self.reservations = list.sorted { ($0.reservedAt ?? 0) > ($1.reservedAt ?? 0) }
+
         } catch {
-            errorMessage = error.localizedDescription
-            reservations = []
+            self.reservations = []
+            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 }

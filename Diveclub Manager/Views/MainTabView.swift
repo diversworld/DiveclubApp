@@ -88,7 +88,7 @@ struct MainTabView: View {
                             routeDestination(route)
                         }
                 }
-                .tabItem { Label("Equipment", systemImage: "tray.full") }
+                .tabItem { Label("Equipment Verleih", systemImage: "tray.full") }
                 .tag(NavigationStore.Tab.equipment)
 
                 NavigationStack(path: nav.pathBinding(for: .profile)) {
