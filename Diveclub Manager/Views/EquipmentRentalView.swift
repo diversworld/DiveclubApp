@@ -42,7 +42,7 @@ struct EquipmentRentalView: View {
 
                             if let details = asset.details, !details.isEmpty {
                                 Text(details)
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(3)
                             } else if let status = asset.status {

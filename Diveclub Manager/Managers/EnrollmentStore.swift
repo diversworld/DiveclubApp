@@ -36,9 +36,11 @@ final class EnrollmentStore: ObservableObject {
         do {
             let result: [Enrollment] = try await APIClient.shared.request("enrollments")
             enrollments = result
+        } catch is CancellationError {
+            // ✅ kein Fehler anzeigen
+            return
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            // wichtig: nicht alte Daten “vortäuschen”
             enrollments = []
         }
     }

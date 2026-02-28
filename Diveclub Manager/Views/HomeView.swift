@@ -287,7 +287,7 @@ struct HomeView: View {
             }
 
             if let teaser = item.teaser, !teaser.isEmpty {
-                HTMLTextView(html: teaser, textStyle: .footnote)
+                HTMLTextView(html: teaser, textStyle: .body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -300,7 +300,7 @@ struct HomeView: View {
                     Image(systemName: "chevron.right")
                 }
             }
-            .font(.footnote)
+            .font(.caption)
             .buttonStyle(.bordered)
         }
         .padding(14)

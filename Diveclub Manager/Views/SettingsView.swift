@@ -44,7 +44,7 @@ struct SettingsView: View {
 
                 if let msg = saveMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.green)
                         .transition(.opacity)
                 }
@@ -70,7 +70,7 @@ struct SettingsView: View {
 
                 if let msg = testMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }

@@ -18,48 +18,51 @@ struct CourseDetailView: View {
 
     @StateObject private var vm: CourseDetailViewModel
     @State private var tab: Tab = .progress
+    @State private var isDescriptionExpanded: Bool = false
+    @State private var isCourseDescExpanded = false
+    @State private var isNotesExpanded = false   // ✅ NEU
 
     init(enrollment: StudentEnrollmentProgress) {
         _vm = StateObject(wrappedValue: CourseDetailViewModel(enrollment: enrollment))
     }
 
     var body: some View {
-        List {
+        ScrollViewReader { proxy in
+            List {
+                Section {
+                    headerView(proxy: proxy)
 
-            Section {
-                headerView
-
-                Picker("Ansicht", selection: $tab) {
-                    ForEach(Tab.allCases) { t in
-                        Text(t.rawValue).tag(t)
+                    Picker("Ansicht", selection: $tab) {
+                        ForEach(Tab.allCases) { t in
+                            Text(t.rawValue).tag(t)
+                        }
                     }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
-            }
 
-            switch tab {
-            case .schedule:
-                scheduleSection
-            case .progress:
-                progressSection
+                switch tab {
+                case .schedule: scheduleSection
+                case .progress: progressSection
+                }
             }
-        }
-        .navigationTitle("Kursdetails")
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: vm.enrollment.id) {
-            await vm.loadHeader()
-            if tab == .schedule { await vm.loadScheduleIfNeeded() }
-        }
-        .onChange(of: tab) { _, newValue in
-            if newValue == .schedule {
-                Task { await vm.loadScheduleIfNeeded() }
+            .navigationTitle("Kursdetails")
+            .navigationBarTitleDisplayMode(.inline)
+            .task(id: vm.enrollment.id) {
+                await vm.loadHeader()
+                if tab == .schedule { await vm.loadScheduleIfNeeded() }
+            }
+            .onChange(of: tab) { _, newValue in
+                if newValue == .schedule {
+                    Task { await vm.loadScheduleIfNeeded() }
+                }
             }
         }
     }
 
+
     // MARK: - Header
 
-    private var headerView: some View {
+    private func headerView(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: 8) {
 
             Text(vm.enrollment.course.title.decodedEntities)
@@ -77,33 +80,38 @@ struct CourseDetailView: View {
 
                 if let loc = ev.location, !loc.isEmpty {
                     Text(loc.decodedEntities)
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if let start = ev.dateStart {
                     Text("Beginn: \(Self.formatDateTime(start))")
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if let end = ev.dateEnd {
                     Text("Ende: \(Self.formatDateTime(end))")
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-            } else {
-                if let eventId = vm.enrollment.eventId {
-                    Text("Event #\(eventId)")
-                        .foregroundStyle(.secondary)
-                }
+            } else if let eventId = vm.enrollment.eventId {
+                Text("Event #\(eventId)")
+                    .foregroundStyle(.secondary)
             }
 
-            // ✅ Kursbeschreibung: erst kurz, dann aufklappbar
             if let desc = vm.enrollment.course.description, !desc.isEmpty {
-                ExpandableHTMLText(html: desc, textStyle: .footnote, collapsedLineLimit: 6)
-                    .padding(.top, 2)
+                ExpandableHTMLText(
+                    html: desc,
+                    textStyle: .body,
+                    collapsedLineLimit: 6,
+                    isExpanded: $isCourseDescExpanded,
+                    scrollProxy: proxy,
+                    scrollID: "courseDescription"
+                )
+                .id("courseDescription-\(isCourseDescExpanded ? 1 : 0)")  // ✅ erzwingt Re-Layout in List
+                .padding(.top, 2)
             }
 
             ProgressView(value: vm.enrollment.progressValue)
@@ -136,7 +144,7 @@ struct CourseDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .font(.footnote)
+                        .font(.caption)
                     }
                     .padding(.vertical, 4)
                 }
@@ -184,11 +192,11 @@ struct CourseDetailView: View {
                             Text(Self.formatDateTime(item.plannedAt))
                                 .foregroundStyle(.secondary)
                         }
-                        .font(.footnote)
+                        .font(.caption)
 
                         if let notes = item.notes, !notes.isEmpty {
                             Text(notes.htmlToPlainText)
-                                .font(.footnote)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

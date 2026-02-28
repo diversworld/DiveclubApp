@@ -10,6 +10,7 @@ import SwiftUI
 struct EquipmentReservationDetailView: View {
 
     @StateObject private var vm: EquipmentReservationDetailViewModel
+    @State private var isNotesExpanded = false   // ✅ NEU
 
     init(reservationId: Int) {
         _vm = StateObject(wrappedValue: EquipmentReservationDetailViewModel(reservationId: reservationId))
@@ -62,7 +63,13 @@ struct EquipmentReservationDetailView: View {
                     Text("Gebühr: \(fee) €")
                 }
                 if let notes = d.notes, !notes.isEmpty {
-                    Text(notes)
+                    ExpandableHTMLText(
+                        html: notes,
+                        textStyle: .caption1,
+                        collapsedLineLimit: 6,
+                        isExpanded: $isNotesExpanded          // ✅ NEU
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 

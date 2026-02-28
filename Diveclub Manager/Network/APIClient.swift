@@ -146,7 +146,9 @@ final class APIClient {
             throw e
         } catch {
             // hier landen auch Timeouts / NSURLErrorTimedOut / DNS etc.
-            throw APIError.transport(error)
+            if error is CancellationError { throw error }
+                if let urlErr = error as? URLError, urlErr.code == .cancelled { throw CancellationError() }
+                throw APIError.transport(error)
         }
     }
 
@@ -174,7 +176,9 @@ final class APIClient {
         } catch let e as APIError {
             throw e
         } catch {
-            throw APIError.transport(error)
+            if error is CancellationError { throw error }
+                if let urlErr = error as? URLError, urlErr.code == .cancelled { throw CancellationError() }
+                throw APIError.transport(error)
         }
     }
 

@@ -129,7 +129,7 @@ private struct AssetRow<Editor: View>: View {
 
                         if let details = asset.details, !details.isEmpty {
                             Text(details)
-                                .font(.footnote)
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(4)
                         }

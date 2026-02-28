@@ -41,7 +41,7 @@ struct MyCoursesView: View {
 
                                 if let eventId = e.eventId {
                                     Text("Event #\(eventId)")
-                                        .font(.footnote)
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
 

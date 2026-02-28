@@ -132,6 +132,7 @@ private struct TankCheckDetailList: View {
 
 private struct ProposalHeaderSection: View {
     let proposal: TankCheckProposalDetailDTO
+    @State private var isNotesExpanded = false   // ✅ NEU
 
     var body: some View {
         Section {
@@ -139,20 +140,25 @@ private struct ProposalHeaderSection: View {
                 .font(.headline)
 
             if let notes = proposal.notes, !notes.isEmpty {
-                ExpandableHTMLText(html: notes, textStyle: .footnote, collapsedLineLimit: 6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                ExpandableHTMLText(
+                    html: notes,
+                    textStyle: .body,
+                    collapsedLineLimit: 6,
+                    isExpanded: $isNotesExpanded          // ✅ NEU
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let vendor = proposal.vendorName, !vendor.isEmpty {
                 Label(vendor, systemImage: "building.2")
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             if let ts = proposal.proposalDate {
                 let date = Date(timeIntervalSince1970: TimeInterval(ts))
                 Label(date.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }

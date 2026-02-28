@@ -141,24 +141,24 @@ struct ReservationView: View {
 
                                             if let sub = d.displaySubtitle, !sub.isEmpty {
                                                 Text(sub)
-                                                    .font(.footnote)
+                                                    .font(.subheadline)
                                                     .foregroundStyle(.secondary)
                                             }
 
                                             if let t = d.types, !t.isEmpty {
                                                 Text("Typ: \(t)")
-                                                    .font(.footnote)
+                                                    .font(.caption)
                                                     .foregroundStyle(.secondary)
                                             }
                                             if let st = d.subType, !st.isEmpty {
                                                 Text("Subtyp: \(st)")
-                                                    .font(.footnote)
+                                                    .font(.caption)
                                                     .foregroundStyle(.secondary)
                                             }
 
                                             if let n = d.notes, !n.isEmpty {
                                                 Text(n)
-                                                    .font(.footnote)
+                                                    .font(.default)
                                                     .foregroundStyle(.secondary)
                                             }
                                         }
@@ -300,7 +300,7 @@ private struct ItemSelectionList: View {
 
                                 if let subtitle = display?.subtitle, !subtitle.isEmpty {
                                     Text(subtitle)
-                                        .font(.footnote)
+                                        .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
