@@ -34,14 +34,36 @@ struct TankCheckDetailView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    Section("Gespeicherte Flaschen") {
+                    GroupBox("Gespeicherte Flaschen") {
                         Toggle("Flaschen im Backend speichern", isOn: $vm.saveTanksToBackend)
-                            .foregroundStyle(.secondary)
+                            .onChange(of: vm.saveTanksToBackend) { _, _ in
+                                Task { await vm.loadSavedTanks() }
+                            }
 
-                        Button {
-                            Task { await vm.loadSavedTanks() }
-                        } label: {
-                            Label("Gespeicherte Flaschen aktualisieren", systemImage: "arrow.clockwise")
+                        if let err = vm.tanksError {
+                            Text(err).foregroundStyle(.red)
+                        }
+
+                        if !vm.savedTanks.isEmpty {
+                            Menu {
+                                ForEach(vm.savedTanks) { t in
+                                    Button {
+                                        vm.applySavedTank(t, to: index)
+                                    } label: {
+                                        Text("\(t.serialNumber) • \(tankSizeLabel(t.size))")
+                                    }
+                                    // ✅ hier dein "nicht doppelt auswählbar" Disable rein
+                                    .disabled(vm.isTankAlreadySelected(t, excludingIndex: index))
+                                }
+                            } label: {
+                                Label("Gespeicherte Flasche auswählen", systemImage: "bookmark")
+                            }
+
+                            if !vm.items[index].serialNumber.isEmpty {
+                                Text("Ausgewählt: \(vm.items[index].serialNumber)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                     // Pflichtartikel (nur Anzeige)
@@ -185,11 +207,18 @@ struct TankCheckDetailView: View {
                     Section {
                         Menu {
                             ForEach(vm.savedTanks) { t in
+                                let used = vm.isSavedTankAlreadySelected(t, excluding: index)
+
                                 Button {
                                     vm.applySavedTank(t, to: index)
                                 } label: {
-                                    Text("\(t.serialNumber) • \(tankSizeLabel(t.size))")
+                                    if used {
+                                        Text("✅ \(t.serialNumber) • \(tankSizeLabel(t.size)) (bereits gewählt)")
+                                    } else {
+                                        Text("\(t.serialNumber) • \(tankSizeLabel(t.size))")
+                                    }
                                 }
+                                .disabled(used)
                             }
                         } label: {
                             Label("Gespeicherte Flasche auswählen", systemImage: "bookmark")
@@ -237,6 +266,15 @@ struct TankCheckDetailView: View {
             TextField("Seriennummer", text: binding.serialNumber)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
+                .onChange(of: binding.serialNumber.wrappedValue) { _, newValue in
+                    // ✅ wenn Nutzer ändert/löscht: Duplikat-Fehler zurücksetzen
+                    if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        vm.tanksError = nil
+                    } else {
+                        // optional: bei Änderung auch löschen, damit UX nicht "hängen bleibt"
+                        vm.tanksError = nil
+                    }
+                }
 
             TextField("Hersteller (optional)", text: binding.manufacturer)
             TextField("BAZ / Norm (optional)", text: binding.bazNumber)

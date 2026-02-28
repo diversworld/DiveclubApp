@@ -49,6 +49,8 @@ final class TankCheckDetailViewModel: ObservableObject {
         var bazNumber: String
         var size: String
         var o2clean: Bool
+        var checkId: Int?
+        var status: String?
 
         var displayLine: String { "\(serialNumber) • \(Self.sizeLabel(size))" }
 
@@ -107,9 +109,10 @@ final class TankCheckDetailViewModel: ObservableObject {
         if saveTanksToBackend {
             do {
                 let api = try await TankService.shared.loadMyTanks()
-                self.savedTanks = api.compactMap { dto in
+                self.savedTanks = api.compactMap { dto -> SavedTank? in
                     let sn = (dto.serialNumber ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !sn.isEmpty else { return nil }
+
                     return SavedTank(
                         id: dto.id,
                         title: (dto.title ?? "").isEmpty ? "Flasche \(sn)" : (dto.title ?? ""),
@@ -117,7 +120,9 @@ final class TankCheckDetailViewModel: ObservableObject {
                         manufacturer: dto.manufacturer ?? "",
                         bazNumber: dto.bazNumber ?? "",
                         size: dto.size ?? "12",
-                        o2clean: dto.o2clean ?? false
+                        o2clean: dto.o2clean ?? false,
+                        checkId: dto.checkId,
+                        status: dto.status
                     )
                 }
                 .sorted { $0.serialNumber.localizedCaseInsensitiveCompare($1.serialNumber) == .orderedAscending }
@@ -133,6 +138,14 @@ final class TankCheckDetailViewModel: ObservableObject {
     func applySavedTank(_ saved: SavedTank, to index: Int) {
         guard items.indices.contains(index) else { return }
 
+        // ✅ Block duplicate selection
+        if isSavedTankAlreadySelected(saved, excluding: index) {
+            tanksError = "Diese Flasche ist bereits ausgewählt und kann nicht doppelt verwendet werden."
+            return
+        }
+
+        tanksError = nil
+
         items[index].serialNumber = saved.serialNumber
         items[index].manufacturer = saved.manufacturer
         items[index].bazNumber = saved.bazNumber
@@ -145,6 +158,9 @@ final class TankCheckDetailViewModel: ObservableObject {
         guard !sn.isEmpty else { return }
 
         if saveTanksToBackend {
+            // ✅ checkId aus dem Angebot (Proposal) = letzte TÜV-Prüfung
+            let lastCheckId = proposal?.checkId
+
             Task {
                 do {
                     _ = try await TankService.shared.upsertTank(
@@ -153,7 +169,8 @@ final class TankCheckDetailViewModel: ObservableObject {
                         manufacturer: item.manufacturer,
                         bazNumber: item.bazNumber,
                         size: item.size,
-                        o2clean: item.o2clean
+                        o2clean: item.o2clean,
+                        checkId: lastCheckId
                     )
                     await loadSavedTanks()
                 } catch {
@@ -170,6 +187,8 @@ final class TankCheckDetailViewModel: ObservableObject {
                 local[idx].bazNumber = item.bazNumber
                 local[idx].size = item.size
                 local[idx].o2clean = item.o2clean
+                // local[idx].checkId = proposal?.checkId   // optional lokal
+                // local[idx].status = "owned"
             } else {
                 let newId = -Int(Date().timeIntervalSince1970)
                 local.append(
@@ -180,7 +199,9 @@ final class TankCheckDetailViewModel: ObservableObject {
                         manufacturer: item.manufacturer,
                         bazNumber: item.bazNumber,
                         size: item.size,
-                        o2clean: item.o2clean
+                        o2clean: item.o2clean,
+                        checkId: proposal?.checkId,
+                        status: "owned"
                     )
                 )
             }
@@ -230,6 +251,25 @@ final class TankCheckDetailViewModel: ObservableObject {
         case "10": return "10"
         default: return "80"
         }
+    }
+    
+    // MARK: - Prevent duplicate saved tank selection
+
+    private func normalizeSerialForCompare(_ s: String) -> String {
+        let raw = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let noWS = raw.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        return noWS.replacingOccurrences(of: "/{2,}", with: "/", options: .regularExpression)
+    }
+
+    /// true, wenn saved.serialNumber bereits in einem anderen Item verwendet wird
+    func isSavedTankAlreadySelected(_ saved: SavedTank, excluding index: Int) -> Bool {
+        let target = normalizeSerialForCompare(saved.serialNumber)
+        for (i, it) in items.enumerated() where i != index {
+            if normalizeSerialForCompare(it.serialNumber) == target {
+                return true
+            }
+        }
+        return false
     }
 
     private func baseArticleId(forTankSize sizeKey: String) -> Int? {
@@ -300,12 +340,6 @@ final class TankCheckDetailViewModel: ObservableObject {
         }
         guard !isSubmitting else { return }
 
-        // ✅ checkId muss vorhanden sein, sonst kann Backend den Termin nicht zuordnen
-        guard let checkId = proposal.checkId else {
-            bookingError = "Prüfungstermin-ID (check_id) fehlt im Angebot. Bitte API prüfen (/api/tank-checks/{id})."
-            return
-        }
-
         for (idx, it) in items.enumerated() {
             if it.serialNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 bookingError = "Bitte Seriennummer für Flasche \(idx + 1) eingeben."
@@ -331,10 +365,9 @@ final class TankCheckDetailViewModel: ObservableObject {
             )
         }
 
-        // ✅ checkId mitgeben
+        // ✅ KEIN checkId im Booking-Payload (dein Wunsch)
         let payload = TankCheckBookRequest(
             proposalId: proposal.id,
-            checkId: checkId,
             notes: bookingNotes.isEmpty ? nil : bookingNotes,
             items: payloadItems
         )
@@ -342,6 +375,11 @@ final class TankCheckDetailViewModel: ObservableObject {
         do {
             _ = try await APIClient.shared.bookTankCheck(payload)
             bookingSuccess = true
+
+            // ✅ Nach erfolgreicher Buchung: checkId in Tanks speichern
+            if let cid = proposal.checkId {
+                await updateSavedTanksAfterBooking(checkId: cid)
+            }
         } catch {
             bookingError = describe(error)
         }
@@ -360,5 +398,58 @@ final class TankCheckDetailViewModel: ObservableObject {
         let raw = s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let noWS = raw.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
         return noWS.replacingOccurrences(of: "/{2,}", with: "/", options: .regularExpression)
+    }
+    
+    // MARK: - Update saved tanks after successful booking
+
+    private func updateSavedTanksAfterBooking(checkId: Int) async {
+        // welche Seriennummern wurden gebucht?
+        let bookedSerials = Set(items
+            .map { normalizeSerial($0.serialNumber) }
+            .filter { !$0.isEmpty }
+        )
+
+        guard !bookedSerials.isEmpty else { return }
+
+        if saveTanksToBackend {
+            do {
+                // Reload, damit wir echte IDs haben
+                let api = try await TankService.shared.loadMyTanks()
+
+                // Tanks, die in der Buchung vorkommen
+                let affected = api.filter { dto in
+                    bookedSerials.contains(normalizeSerial(dto.serialNumber ?? ""))
+                }
+
+                // Patch je Tank (TankService patcht nur bei Diff)
+                for t in affected {
+                    _ = try await TankService.shared.upsertTank(
+                        serialNumber: t.serialNumber ?? "",
+                        title: t.title,
+                        manufacturer: t.manufacturer,
+                        bazNumber: t.bazNumber,
+                        size: t.size ?? "12",
+                        o2clean: t.o2clean ?? false,
+                        checkId: checkId // ✅ letzte Prüfung aktualisieren
+                    )
+                }
+
+                await loadSavedTanks()
+            } catch {
+                tanksError = describe(error)
+            }
+        } else {
+            // local fallback
+            var local = loadLocalTanks()
+            for i in local.indices {
+                let norm = normalizeSerial(local[i].serialNumber)
+                if bookedSerials.contains(norm) {
+                    local[i].checkId = checkId
+                    local[i].status = "owned"
+                }
+            }
+            saveLocalTanks(local)
+            await loadSavedTanks()
+        }
     }
 }

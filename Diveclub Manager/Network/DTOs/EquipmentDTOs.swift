@@ -116,36 +116,24 @@ struct TankDTO: Decodable, Identifiable, Equatable {
     let manufacturer: String?
     let bazNumber: String?
     let size: String?
-    let status: String?
-    let rentalFee: String?
+    let status: String?      // ✅ "available" / "owned" / ...
+    let o2clean: Bool?
+    let owner: Int?
+    let checkId: Int?        // ✅ letzte TÜV-Prüfung (check_id)
+
     let lastCheckDate: Int?
     let nextCheckDate: Int?
 
-    // Display helpers for selection lists
-    var displayTitle: String {
-        let parts: [String] = [
-            "Flasche #\(id)", // ✅ Inventarnummer immer sichtbar
-            title?.isEmpty == false ? title : nil,
-            serialNumber?.isEmpty == false ? "SN \(serialNumber!)" : nil,
-            size?.isEmpty == false ? "\(size!) L" : nil
-        ].compactMap { $0 }
-        return parts.joined(separator: " · ")
-    }
-    
-    var displaySubtitle: String? {
-        let details = [
-            manufacturer?.isEmpty == false ? "Hersteller: \(manufacturer!)" : nil,
-            bazNumber?.isEmpty == false ? "BAZ: \(bazNumber!)" : nil
-        ].compactMap { $0 }.joined(separator: "\n")
-        return details.isEmpty ? nil : details
+    enum CodingKeys: String, CodingKey {
+        case id, title, serialNumber, manufacturer, bazNumber, size, status, owner, o2clean
+        case checkId
+        case check_id
+        case lastCheckDate, nextCheckDate
     }
 
-    enum CodingKeys: String, CodingKey {
-        case id, title, serialNumber, manufacturer, bazNumber, size, status, rentalFee, lastCheckDate, nextCheckDate
-    }
-    
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+
         id = try c.decode(Int.self, forKey: .id)
         title = try c.decodeIfPresent(String.self, forKey: .title)
         serialNumber = try c.decodeIfPresent(String.self, forKey: .serialNumber)
@@ -153,8 +141,14 @@ struct TankDTO: Decodable, Identifiable, Equatable {
         bazNumber = try c.decodeIfPresent(String.self, forKey: .bazNumber)
         size = try c.decodeIfPresent(String.self, forKey: .size)
         status = try c.decodeIfPresent(String.self, forKey: .status)
-        if let num = try? c.decode(Double.self, forKey: .rentalFee) { rentalFee = String(num) }
-        else { rentalFee = try c.decodeIfPresent(String.self, forKey: .rentalFee) }
+        owner = try c.decodeIfPresent(Int.self, forKey: .owner)
+        o2clean = try c.decodeIfPresent(Bool.self, forKey: .o2clean)
+
+        // ✅ robust: checkId oder check_id
+        checkId =
+            (try? c.decodeIfPresent(Int.self, forKey: .checkId)) ??
+            (try? c.decodeIfPresent(Int.self, forKey: .check_id))
+
         lastCheckDate = try c.decodeIfPresent(Int.self, forKey: .lastCheckDate)
         nextCheckDate = try c.decodeIfPresent(Int.self, forKey: .nextCheckDate)
     }
@@ -241,13 +235,35 @@ extension EquipmentDTO {
 }
 
 extension TankDTO {
+    var displayTitle: String {
+        let parts: [String] = [
+            "Flasche #\(id)",
+            title?.isEmpty == false ? title : nil,
+            serialNumber?.isEmpty == false ? "SN \(serialNumber!)" : nil,
+            size?.isEmpty == false ? "\(size!) L" : nil
+        ].compactMap { $0 }
+        return parts.joined(separator: " · ")
+    }
+
+    var displaySubtitle: String? {
+        let parts: [String] = [
+            manufacturer?.isEmpty == false ? "Hersteller: \(manufacturer!)" : nil,
+            bazNumber?.isEmpty == false ? "BAZ: \(bazNumber!)" : nil,
+            status?.isEmpty == false ? "Status: \(status!)" : nil,
+            checkId != nil ? "Letzte Prüfung (checkId): \(checkId!)" : nil
+        ].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: "\n")
+    }
+}
+
+extension TankDTO {
     func toAsset() -> EquipmentAsset {
-        return EquipmentAsset(
+        EquipmentAsset(
             id: id,
             type: .tank,
             title: displayTitle,
             status: status,
-            fee: rentalFee,
+            fee: nil,                 // ✅ TankDTO hat kein rentalFee
             details: displaySubtitle
         )
     }
