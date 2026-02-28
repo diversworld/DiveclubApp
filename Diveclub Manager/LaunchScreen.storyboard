@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="LaunchViewController">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="LaunchScene">
+            <objects>
+                <viewController id="LaunchViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="RootView">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="BackgroundImage">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
+                            <view userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OverlayView">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <color key="backgroundColor" name="LaunchOverlayColor"/>
+                            </view>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" image="LaunchLogo" translatesAutoresizingMaskIntoConstraints="NO" id="LogoImage">
+                                <rect key="frame" x="106.66666666666669" y="61" width="180" height="180"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" secondItem="LogoImage" secondAttribute="width" id="logoAspect"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="SafeArea"/>
+                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="BackgroundImage" firstAttribute="bottom" secondItem="RootView" secondAttribute="bottom" id="bgBottom"/>
+                            <constraint firstItem="BackgroundImage" firstAttribute="leading" secondItem="RootView" secondAttribute="leading" id="bgLeading"/>
+                            <constraint firstItem="BackgroundImage" firstAttribute="top" secondItem="RootView" secondAttribute="top" id="bgTop"/>
+                            <constraint firstItem="BackgroundImage" firstAttribute="trailing" secondItem="RootView" secondAttribute="trailing" id="bgTrailing"/>
+                            <constraint firstItem="LogoImage" firstAttribute="centerX" secondItem="SafeArea" secondAttribute="centerX" id="logoCenterX"/>
+                            <constraint firstItem="LogoImage" firstAttribute="centerY" secondItem="SafeArea" secondAttribute="centerY" constant="-300" id="logoCenterY"/>
+                            <constraint firstItem="LogoImage" firstAttribute="width" relation="lessThanOrEqual" priority="999" constant="180" id="logoWidthMax"/>
+                            <constraint firstItem="LogoImage" firstAttribute="width" relation="greaterThanOrEqual" priority="999" constant="140" id="logoWidthMin"/>
+                            <constraint firstItem="LogoImage" firstAttribute="width" secondItem="SafeArea" secondAttribute="width" multiplier="0.24" priority="750" id="logoWidthProportional"/>
+                            <constraint firstItem="OverlayView" firstAttribute="bottom" secondItem="RootView" secondAttribute="bottom" id="ovBottom"/>
+                            <constraint firstItem="OverlayView" firstAttribute="leading" secondItem="RootView" secondAttribute="leading" id="ovLeading"/>
+                            <constraint firstItem="OverlayView" firstAttribute="top" secondItem="RootView" secondAttribute="top" id="ovTop"/>
+                            <constraint firstItem="OverlayView" firstAttribute="trailing" secondItem="RootView" secondAttribute="trailing" id="ovTrailing"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="FirstResponder" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="140" y="113"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="LaunchBackground" width="1024" height="1024"/>
+        <image name="LaunchLogo" width="1024" height="1024"/>
+        <namedColor name="LaunchOverlayColor">
+            <color red="0.0" green="0.20000000000000001" blue="0.59999999999999998" alpha="0.2199999988079071" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>

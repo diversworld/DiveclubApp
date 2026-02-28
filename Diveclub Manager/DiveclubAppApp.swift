@@ -14,6 +14,7 @@ struct DiveclubAppApp: App {
     @StateObject private var settings = AppSettingsManager.shared
 
     @State private var showSplash = true
+    @State private var didRunBootstrap = false
 
     var body: some Scene {
         WindowGroup {
@@ -21,6 +22,8 @@ struct DiveclubAppApp: App {
                 MainTabView()
                     .environmentObject(auth)
                     .environmentObject(settings)
+                    .opacity(showSplash ? 0 : 1)
+                    .animation(.easeOut(duration: 0.45), value: showSplash)
 
                 if showSplash {
                     SplashView()
@@ -29,12 +32,18 @@ struct DiveclubAppApp: App {
                 }
             }
             .task {
-                await auth.bootstrap()
+                guard !didRunBootstrap else { return }
+                didRunBootstrap = true
 
-                // optional: kleine Mindestanzeigezeit, damit es nicht "blinkt"
-                try? await Task.sleep(nanoseconds: 450_000_000)
+                async let boot: Void = auth.bootstrap()
 
-                withAnimation(.easeOut(duration: 0.35)) {
+                // ✅ Splash MIN Zeit (länger)
+                do { try await Task.sleep(nanoseconds: 2_200_000_000) } catch {}
+
+                // ✅ Warte zusätzlich auf bootstrap (wenn du nicht warten willst: diese Zeile entfernen)
+                await boot
+
+                withAnimation(.easeOut(duration: 0.55)) {
                     showSplash = false
                 }
             }

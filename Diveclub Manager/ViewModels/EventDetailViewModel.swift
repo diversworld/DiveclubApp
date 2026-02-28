@@ -34,7 +34,11 @@ final class EventDetailViewModel: ObservableObject {
             let loaded: Event = try await APIClient.shared.request("/events/\(id)")
             self.event = loaded
 
-            self.isAlreadyBooked = enrollmentStore.isEnrolled(eventId: id)
+            if let courseId = loaded.courseId {
+                self.isAlreadyBooked = enrollmentStore.isEnrolled(courseId: courseId) || enrollmentStore.isEnrolled(eventId: id)
+            } else {
+                self.isAlreadyBooked = enrollmentStore.isEnrolled(eventId: id)
+            }
 
         } catch {
             self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -44,11 +48,12 @@ final class EventDetailViewModel: ObservableObject {
     func enroll() async {
         guard let currentEvent = self.event else { return }
 
-        // frisch prüfen
-        if enrollmentStore.isEnrolled(eventId: currentEvent.id) {
-            isAlreadyBooked = true
-            return
-        }
+        // ✅ stärkere Sperre: Course + Event
+           if let courseId = currentEvent.courseId,
+              enrollmentStore.isEnrolled(courseId: courseId) || enrollmentStore.isEnrolled(eventId: currentEvent.id) {
+               isAlreadyBooked = true
+               return
+           }
 
         guard !isSubmitting else { return }
 
@@ -81,7 +86,25 @@ final class EventDetailViewModel: ObservableObject {
             self.event = updated
 
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            // ✅ Wenn Server sagt "already enrolled" → UI sofort sperren statt nur Fehlermeldung
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .badStatus(let code, let body) where code == 400:
+                        let b = (body ?? "").lowercased()
+                        if b.contains("already") && b.contains("enrolled") {
+                            await enrollmentStore.refresh()
+                            isAlreadyBooked = true
+                            errorMessage = nil
+                            return
+                        }
+                        errorMessage = apiError.localizedDescription
+
+                    default:
+                        errorMessage = apiError.localizedDescription
+                    }
+                } else {
+                    errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                }
         }
     }
 

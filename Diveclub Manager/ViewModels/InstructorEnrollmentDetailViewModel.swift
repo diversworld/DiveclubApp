@@ -45,13 +45,11 @@ final class InstructorEnrollmentDetailViewModel: ObservableObject {
         )
 
         do {
-            let body = try JSONEncoder().encode(payload)
-
-            // ✅ PATCH /api/progress/{exerciseId}
+            // ✅ Encodable payload direkt übergeben (CodingKeys greifen!)
             try await APIClient.shared.requestWithoutResponse(
                 "progress/\(exerciseId)",
                 method: "PATCH",
-                body: body
+                body: payload
             )
 
             // ✅ Lokales UI aktualisieren

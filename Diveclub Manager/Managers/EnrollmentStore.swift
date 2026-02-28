@@ -52,6 +52,12 @@ final class EnrollmentStore: ObservableObject {
         //isLoading = false
     }
 
+    // ✅ NEU: Check per Course
+    func isEnrolled(courseId: Int) -> Bool {
+        enrollments.contains(where: { $0.courseId == courseId })
+    }
+
+    // Bestehendes Event-Check kannst du lassen
     func isEnrolled(eventId: Int) -> Bool {
         enrollments.contains(where: { $0.eventId == eventId })
     }

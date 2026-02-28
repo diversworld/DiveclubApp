@@ -14,7 +14,7 @@ struct UpdateExerciseRequest: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case status
-        case dateCompleted
+        case dateCompleted = "date_completed"
         case notes
     }
 }

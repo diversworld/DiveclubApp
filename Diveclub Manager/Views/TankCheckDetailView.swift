@@ -139,10 +139,7 @@ private struct ProposalHeaderSection: View {
                 .font(.headline)
 
             if let notes = proposal.notes, !notes.isEmpty {
-                // Wenn du HTML brauchst, tausche das gegen HTMLTextView(html: notes, textStyle: .footnote)
-                Text(notes)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                ExpandableHTMLText(html: notes, textStyle: .footnote, collapsedLineLimit: 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 

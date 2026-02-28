@@ -151,7 +151,6 @@ struct HomeView: View {
                         if let info = vm.config?.infoText, !info.isEmpty {
                             HTMLTextView(html: info, textStyle: .body)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .fixedSize(horizontal: false, vertical: true)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
                         }
