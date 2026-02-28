@@ -34,7 +34,16 @@ struct TankCheckDetailView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+                    Section("Gespeicherte Flaschen") {
+                        Toggle("Flaschen im Backend speichern", isOn: $vm.saveTanksToBackend)
+                            .foregroundStyle(.secondary)
 
+                        Button {
+                            Task { await vm.loadSavedTanks() }
+                        } label: {
+                            Label("Gespeicherte Flaschen aktualisieren", systemImage: "arrow.clockwise")
+                        }
+                    }
                     // Pflichtartikel (nur Anzeige)
                     if !vm.defaultArticlesForUI().isEmpty {
                         Section("Enthalten (Pflicht)") {
@@ -161,16 +170,67 @@ struct TankCheckDetailView: View {
                 .disabled(vm.items.count <= 1)
             }
 
-            // Saved Tanks picker (wenn vorhanden)
-            if !vm.savedTanks.isEmpty {
-                Menu {
-                    ForEach(vm.savedTanks) { t in
-                        Button("\(t.serialNumber) • \(tankSizeLabel(t.size))") {
-                            vm.applySavedTank(t, to: index)
+            Section("Gespeicherte Flaschen") {
+                Toggle("Flaschen im Backend speichern", isOn: $vm.saveTanksToBackend)
+                    .onChange(of: vm.saveTanksToBackend) { _, _ in
+                        Task { await vm.loadSavedTanks() }
+                    }
+
+                if let err = vm.tanksError {
+                    Text(err).foregroundStyle(.red)
+                }
+
+                // Saved Tanks picker (wenn vorhanden)
+                if !vm.savedTanks.isEmpty {
+                    Section {
+                        Menu {
+                            ForEach(vm.savedTanks) { t in
+                                Button {
+                                    vm.applySavedTank(t, to: index)
+                                } label: {
+                                    Text("\(t.serialNumber) • \(tankSizeLabel(t.size))")
+                                }
+                            }
+                        } label: {
+                            Label("Gespeicherte Flasche auswählen", systemImage: "bookmark")
+                        }
+
+                        // optional: kleine Bestätigung anzeigen
+                        if !vm.items[index].serialNumber.isEmpty {
+                            Text("Ausgewählt: \(vm.items[index].serialNumber)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                } label: {
-                    Label("Gespeicherte Flasche auswählen", systemImage: "bookmark")
+                } else {
+                    ForEach(vm.savedTanks) { t in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(t.displayLine).font(.subheadline)
+                                if !t.manufacturer.isEmpty || !t.bazNumber.isEmpty {
+                                    Text([t.manufacturer, t.bazNumber].filter { !$0.isEmpty }.joined(separator: " • "))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            if t.o2clean {
+                                Text("O₂-clean")
+                                    .font(.caption2)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.secondary.opacity(0.15))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                vm.deleteSavedTank(t)
+                            } label: {
+                                Label("Löschen", systemImage: "trash")
+                            }
+                        }
+                    }
                 }
             }
 

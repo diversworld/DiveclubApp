@@ -14,13 +14,30 @@ struct TankCheckProposalDTO: Decodable, Identifiable, Equatable {
     let title: String
     let published: Bool
     let proposalDate: Int?
-
-    // manchmal kommt vendorName nur im Detail – optional halten, falls Backend es doch liefert
     let vendorName: String?
 
-    enum CodingKeys: String, CodingKey {
-        case id, title, published, vendorName
-        case proposalDate
+    /// ✅ Wichtig: Prüfungstermin-ID (kommt als checkId oder check_id)
+    let checkId: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, published, vendorName, proposalDate
+        case checkId
+        case check_id
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        published = (try? c.decode(Bool.self, forKey: .published)) ?? false
+        proposalDate = try c.decodeIfPresent(Int.self, forKey: .proposalDate)
+        vendorName = try c.decodeIfPresent(String.self, forKey: .vendorName)
+
+        // robust: checkId kann camelCase oder snake_case sein
+        checkId =
+            (try? c.decodeIfPresent(Int.self, forKey: .checkId)) ??
+            (try? c.decodeIfPresent(Int.self, forKey: .check_id))
     }
 }
 
@@ -35,8 +52,29 @@ struct TankCheckProposalDetailDTO: Decodable, Identifiable, Equatable {
     let notes: String?
     let articles: [TankCheckArticleDTO]
 
-    enum CodingKeys: String, CodingKey {
+    /// ✅ Wichtig: Prüfungstermin-ID (kommt als checkId oder check_id)
+    let checkId: Int?
+
+    private enum CodingKeys: String, CodingKey {
         case id, title, published, proposalDate, vendorName, notes, articles
+        case checkId
+        case check_id
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        published = (try? c.decode(Bool.self, forKey: .published)) ?? false
+        proposalDate = try c.decodeIfPresent(Int.self, forKey: .proposalDate)
+        vendorName = try c.decodeIfPresent(String.self, forKey: .vendorName)
+        notes = try c.decodeIfPresent(String.self, forKey: .notes)
+        articles = (try? c.decode([TankCheckArticleDTO].self, forKey: .articles)) ?? []
+
+        checkId =
+            (try? c.decodeIfPresent(Int.self, forKey: .checkId)) ??
+            (try? c.decodeIfPresent(Int.self, forKey: .check_id))
     }
 }
 

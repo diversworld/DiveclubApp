@@ -11,11 +11,13 @@ import Foundation
 /// POST /api/tank-checks/book
 struct TankCheckBookRequest: Encodable {
     let proposalId: Int
+    let checkId: Int            // ✅ NEU: Prüfungstermin
     let notes: String?
     let items: [TankCheckBookItemRequest]
 
     enum CodingKeys: String, CodingKey {
         case proposalId = "proposal_id"   // ✅ wichtig
+        case checkId = "check_id"   // ✅ sicher: Backend-Feld ist check_id
         case notes
         case items
     }
