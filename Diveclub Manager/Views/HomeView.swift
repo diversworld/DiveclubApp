@@ -282,7 +282,7 @@ struct HomeView: View {
 
             if let ts = item.date {
                 Text(formatDate(ts))
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
@@ -300,7 +300,7 @@ struct HomeView: View {
                     Image(systemName: "chevron.right")
                 }
             }
-            .font(.caption)
+            .font(.body)
             .buttonStyle(.bordered)
         }
         .padding(14)

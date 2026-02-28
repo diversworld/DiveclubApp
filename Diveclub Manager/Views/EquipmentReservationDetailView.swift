@@ -43,7 +43,7 @@ struct EquipmentReservationDetailView: View {
                         .font(.headline)
                     Spacer()
                     Text(s.text)
-                        .font(.caption)
+                        .font(.body)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(s.color.opacity(0.15))
@@ -65,7 +65,7 @@ struct EquipmentReservationDetailView: View {
                 if let notes = d.notes, !notes.isEmpty {
                     ExpandableHTMLText(
                         html: notes,
-                        textStyle: .caption1,
+                        textStyle: .body,
                         collapsedLineLimit: 6,
                         isExpanded: $isNotesExpanded          // ✅ NEU
                     )
@@ -88,7 +88,7 @@ struct EquipmentReservationDetailView: View {
 
                                 let st = statusLabel(it.reservationStatus ?? d.reservationStatus)
                                 Text(st.text)
-                                    .font(.caption2)
+                                    .font(.body)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(st.color.opacity(0.15))
@@ -97,7 +97,7 @@ struct EquipmentReservationDetailView: View {
 
                             if let itemId = it.itemId, itemId != 0 {
                                 Text("Item-ID: #\(itemId)")
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
 
                                 // ✅ Klartext-Details aus Katalog + Options
@@ -108,21 +108,21 @@ struct EquipmentReservationDetailView: View {
                             if isEquipment(it.itemType) {
                                 if let line = vm.prettyTypeLineWithFallback(types: it.types, subType: it.subType) {
                                     Text(line)
-                                        .font(.footnote)
+                                        .font(.body)
                                         .foregroundStyle(.secondary)
                                 }
                             }
 
                             if let n = it.notes, !n.isEmpty {
                                 Text(n)
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                if let v = it.reservedAt { Text("Reserviert: \(formatDateTime(v))").font(.caption).foregroundStyle(.tertiary) }
-                                if let v = it.pickedUpAt { Text("Abgeholt: \(formatDateTime(v))").font(.caption).foregroundStyle(.tertiary) }
-                                if let v = it.returnedAt { Text("Zurück: \(formatDateTime(v))").font(.caption).foregroundStyle(.tertiary) }
+                                if let v = it.reservedAt { Text("Reserviert: \(formatDateTime(v))").font(.body).foregroundStyle(.tertiary) }
+                                if let v = it.pickedUpAt { Text("Abgeholt: \(formatDateTime(v))").font(.body).foregroundStyle(.tertiary) }
+                                if let v = it.returnedAt { Text("Zurück: \(formatDateTime(v))").font(.body).foregroundStyle(.tertiary) }
                             }
                         }
                         .padding(.vertical, 4)
@@ -145,11 +145,11 @@ struct EquipmentReservationDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     let inv = (t.title?.isEmpty == false) ? t.title! : "Flasche #\(t.id)"
                     Text("Inventar: \(inv)")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
 
                     if let sub = t.displaySubtitle, !sub.isEmpty {
-                        Text(sub).font(.footnote).foregroundStyle(.secondary)
+                        Text(sub).font(.body).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -158,13 +158,13 @@ struct EquipmentReservationDetailView: View {
             if let r = vm.regsById[itemId] {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Inventar: \(r.displayTitle)")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
 
                     // ✅ Klartext-Reglerdetails (Options: Hersteller + Modellnamen)
                     let lines = vm.prettyRegulatorDetails(r)
                     ForEach(lines, id: \.self) { line in
-                        Text(line).font(.footnote).foregroundStyle(.secondary)
+                        Text(line).font(.body).foregroundStyle(.secondary)
                     }
                 }
             } else {
@@ -174,9 +174,9 @@ struct EquipmentReservationDetailView: View {
                 let m2s = item.regModel2ndSec
                 if (m1?.isEmpty == false) || (m2p?.isEmpty == false) || (m2s?.isEmpty == false) {
                     VStack(alignment: .leading, spacing: 4) {
-                        if let v = m1, !v.isEmpty { Text("Modell 1. Stufe: \(v)").font(.footnote).foregroundStyle(.secondary) }
-                        if let v = m2p, !v.isEmpty { Text("Modell 2. Stufe (prim): \(v)").font(.footnote).foregroundStyle(.secondary) }
-                        if let v = m2s, !v.isEmpty { Text("Modell 2. Stufe (sec): \(v)").font(.footnote).foregroundStyle(.secondary) }
+                        if let v = m1, !v.isEmpty { Text("Modell 1. Stufe: \(v)").font(.body).foregroundStyle(.secondary) }
+                        if let v = m2p, !v.isEmpty { Text("Modell 2. Stufe (prim): \(v)").font(.body).foregroundStyle(.secondary) }
+                        if let v = m2s, !v.isEmpty { Text("Modell 2. Stufe (sec): \(v)").font(.body).foregroundStyle(.secondary) }
                     }
                 }
             }
@@ -185,13 +185,13 @@ struct EquipmentReservationDetailView: View {
             if let e = vm.eqById[itemId] {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Inventar: \(e.displayTitle)")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
 
                     // ✅ Klartext-Equipmentdetails (Options: Typ/Subtyp/Hersteller/Größe)
                     let lines = vm.prettyEquipmentDetails(e)
                     ForEach(lines, id: \.self) { line in
-                        Text(line).font(.footnote).foregroundStyle(.secondary)
+                        Text(line).font(.body).foregroundStyle(.secondary)
                     }
                 }
             }

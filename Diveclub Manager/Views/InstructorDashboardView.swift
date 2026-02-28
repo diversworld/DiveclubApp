@@ -121,7 +121,7 @@ struct InstructorDashboardView: View {
 
     private func statusBadge(_ status: String) -> some View {
         Text(status.uppercased())
-            .font(.caption)
+            .font(.body)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(.thinMaterial)

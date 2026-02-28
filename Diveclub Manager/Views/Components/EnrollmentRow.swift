@@ -44,7 +44,7 @@ struct EnrollmentRow: View {
     
     private var statusBadge: some View {
         Text(enrollment.statusLabel)
-            .font(.caption)
+            .font(.body)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(enrollment.statusColor.opacity(0.15))

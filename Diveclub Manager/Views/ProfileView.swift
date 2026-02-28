@@ -166,7 +166,7 @@ extension ProfileView {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.footnote)
+                .font(.body)
                 .foregroundStyle(.secondary)
         }
         .padding()
@@ -179,7 +179,7 @@ extension ProfileView {
             Text("Instructor")
                 .bold()
         }
-        .font(.caption)
+        .font(.body)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(.blue.opacity(0.15))

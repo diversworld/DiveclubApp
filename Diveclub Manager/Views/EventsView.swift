@@ -51,7 +51,7 @@ struct EventsView: View {
 
                             if let ts = event.dateStart {
                                 Text(Self.formatDateTime(ts))
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
                         }

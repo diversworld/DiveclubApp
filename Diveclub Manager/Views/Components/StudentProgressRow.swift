@@ -21,7 +21,7 @@ struct StudentProgressRow: View {
                 Spacer()
                 
                 Text("\(Int(student.progressValue * 100))%")
-                    .font(.caption)
+                    .font(.body)
                     .bold()
             }
             

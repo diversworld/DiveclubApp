@@ -33,7 +33,7 @@ struct EquipmentView: View {
 
             Section("Hinweis+#") {
                 Text("Abholung/Rückgabe erfolgt durch Admin im Backend. In der App kannst du reservieren und den Status verfolgen.")
-                    .font(.footnote)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
         }

@@ -70,7 +70,7 @@ struct ReservationView: View {
 
                 if vm.members.isEmpty {
                     Text("Mitglieder konnten nicht geladen werden.")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -125,7 +125,7 @@ struct ReservationView: View {
 
                             if alreadySelected {
                                 Text("Dieser Artikel ist bereits in der Auswahl.")
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -147,18 +147,18 @@ struct ReservationView: View {
 
                                             if let t = d.types, !t.isEmpty {
                                                 Text("Typ: \(t)")
-                                                    .font(.caption)
+                                                    .font(.body)
                                                     .foregroundStyle(.secondary)
                                             }
                                             if let st = d.subType, !st.isEmpty {
                                                 Text("Subtyp: \(st)")
-                                                    .font(.caption)
+                                                    .font(.body)
                                                     .foregroundStyle(.secondary)
                                             }
 
                                             if let n = d.notes, !n.isEmpty {
                                                 Text(n)
-                                                    .font(.default)
+                                                    .font(.body)
                                                     .foregroundStyle(.secondary)
                                             }
                                         }
@@ -261,7 +261,7 @@ private struct ItemSelectionList: View {
 
                                         if let subtitle = display?.subtitle, !subtitle.isEmpty {
                                             Text(subtitle)
-                                                .font(.footnote)
+                                                .font(.body)
                                                 .foregroundStyle(.secondary)
                                                 .fixedSize(horizontal: false, vertical: true)
                                         }

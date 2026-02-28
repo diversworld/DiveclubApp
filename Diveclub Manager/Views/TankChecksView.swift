@@ -52,7 +52,7 @@ struct TankChecksView: View {
 
                                 if let v = p.vendorName, !v.isEmpty {
                                     Text(v)
-                                        .font(.caption)
+                                        .font(.body)
                                         .foregroundStyle(.secondary)
                                 }
                             }

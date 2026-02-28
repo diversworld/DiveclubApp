@@ -136,7 +136,7 @@ private struct AssetRow<Editor: View>: View {
 
                         if let fee = asset.fee, !fee.isEmpty {
                             Text("Gebühr: \(fee)")
-                                .font(.footnote)
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -145,7 +145,7 @@ private struct AssetRow<Editor: View>: View {
 
                     if !isAvailable {
                         Text("nicht verfügbar")
-                            .font(.footnote)
+                            .font(.body)
                             .foregroundStyle(.secondary)
                     }
                 }

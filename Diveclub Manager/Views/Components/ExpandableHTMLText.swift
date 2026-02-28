@@ -92,11 +92,11 @@ struct ExpandableHTMLText: View {
                     } label: {
                         HStack(spacing: 6) {
                             Text(isExpanded ? "Weniger anzeigen" : "Mehr anzeigen")
-                                .font(.caption)
+                                .font(.body)
                                 .fontWeight(.semibold)
 
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
+                                .font(.body.weight(.semibold))
                         }
                     }
                     .buttonStyle(.plain)

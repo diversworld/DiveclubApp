@@ -44,7 +44,7 @@ struct SettingsView: View {
 
                 if let msg = saveMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundStyle(.green)
                         .transition(.opacity)
                 }
@@ -70,7 +70,7 @@ struct SettingsView: View {
 
                 if let msg = testMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -84,7 +84,7 @@ struct SettingsView: View {
                     }
                 } else if let err = settings.configError {
                     Text("Hinweis: \(err)")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
 

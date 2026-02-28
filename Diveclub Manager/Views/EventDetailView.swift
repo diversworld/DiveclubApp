@@ -33,19 +33,19 @@ struct EventDetailView: View {
 
                             if let start = event.dateStart {
                                 Text("Beginn: \(formatDateTime(start))")
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
 
                             if let end = event.dateEnd {
                                 Text("Ende: \(formatDateTime(end))")
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
 
                             if let loc = event.location, !loc.isEmpty {
                                 Text(loc.decodedEntities)
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -82,7 +82,7 @@ struct EventDetailView: View {
 
                         if vm.isFull && !vm.isAlreadyBooked {
                             Text("Dieser Termin ist aktuell voll.")
-                                .font(.footnote)
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                         }
                     }

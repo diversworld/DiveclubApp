@@ -67,7 +67,7 @@ private struct EquipmentAssetRow: View {
                     Text("Gebühr: \(fee)")
                 }
             }
-            .font(.footnote)
+            .font(.body)
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)

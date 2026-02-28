@@ -80,19 +80,19 @@ struct CourseDetailView: View {
 
                 if let loc = ev.location, !loc.isEmpty {
                     Text(loc.decodedEntities)
-                        .font(.caption)
+                        .font(.default)
                         .foregroundStyle(.secondary)
                 }
 
                 if let start = ev.dateStart {
                     Text("Beginn: \(Self.formatDateTime(start))")
-                        .font(.caption)
+                        .font(.default)
                         .foregroundStyle(.secondary)
                 }
 
                 if let end = ev.dateEnd {
                     Text("Ende: \(Self.formatDateTime(end))")
-                        .font(.caption)
+                        .font(.default)
                         .foregroundStyle(.secondary)
                 }
 
@@ -144,7 +144,7 @@ struct CourseDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .font(.caption)
+                        .font(.body)
                     }
                     .padding(.vertical, 4)
                 }
@@ -192,11 +192,11 @@ struct CourseDetailView: View {
                             Text(Self.formatDateTime(item.plannedAt))
                                 .foregroundStyle(.secondary)
                         }
-                        .font(.caption)
+                        .font(.body)
 
                         if let notes = item.notes, !notes.isEmpty {
                             Text(notes.htmlToPlainText)
-                                .font(.caption)
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

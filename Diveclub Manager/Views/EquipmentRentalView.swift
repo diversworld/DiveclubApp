@@ -47,7 +47,7 @@ struct EquipmentRentalView: View {
                                     .lineLimit(3)
                             } else if let status = asset.status {
                                 Text(status)
-                                    .font(.footnote)
+                                    .font(.body)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -55,7 +55,7 @@ struct EquipmentRentalView: View {
                         Spacer()
 
                         Image(systemName: "chevron.right")
-                            .font(.footnote)
+                            .font(.body)
                             .foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 6)

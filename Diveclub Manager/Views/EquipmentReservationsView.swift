@@ -60,7 +60,7 @@ private struct ReservationRow: View {
                             .font(.headline)
 
                         Text("ID: #\(reservation.id)")
-                            .font(.caption)
+                            .font(.body)
                             .foregroundStyle(.secondary)
                     }
 
@@ -68,7 +68,7 @@ private struct ReservationRow: View {
 
                     let s = statusLabel(reservation.reservationStatus)
                     Text(s.text)
-                        .font(.caption)
+                        .font(.body)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(s.color.opacity(0.15))
@@ -78,25 +78,25 @@ private struct ReservationRow: View {
                 if let reservedAt = reservation.reservedAt {
                     if let returnedAt = reservation.returnedAt {
                         Text("Reserviert am: \(formatDateTime(reservedAt)) – Zurückgegeben am:\(formatDateTime(returnedAt))")
-                            .font(.footnote)
+                            .font(.body)
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Reserviert am \(formatDateTime(reservedAt))")
-                            .font(.footnote)
+                            .font(.body)
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 if let fee = reservation.rentalFee {
                     Text("Gebühr: \(fee) €")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
 
                 // optional (falls Backend später items in Liste liefert)
                 if let count = reservation.items?.count, count > 0 {
                     Text("\(count) Position(en)")
-                        .font(.footnote)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
             }

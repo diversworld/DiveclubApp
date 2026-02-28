@@ -68,7 +68,7 @@ struct EnrollmentCard: View {
     
     private var statusBadge: some View {
         Text(statusText)
-            .font(.caption)
+            .font(.body)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(statusColor.opacity(0.2))

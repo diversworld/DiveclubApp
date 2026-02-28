@@ -41,13 +41,13 @@ struct MyCoursesView: View {
 
                                 if let eventId = e.eventId {
                                     Text("Event #\(eventId)")
-                                        .font(.caption)
+                                        .font(.body)
                                         .foregroundStyle(.secondary)
                                 }
 
                                 if let desc = e.course.description, !desc.isEmpty {
                                     Text(desc.htmlSummary(maxChars: 300))
-                                        .font(.caption)
+                                        .font(.body)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(4)
                                 }

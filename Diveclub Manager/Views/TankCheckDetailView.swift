@@ -151,14 +151,14 @@ private struct ProposalHeaderSection: View {
 
             if let vendor = proposal.vendorName, !vendor.isEmpty {
                 Label(vendor, systemImage: "building.2")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
             if let ts = proposal.proposalDate {
                 let date = Date(timeIntervalSince1970: TimeInterval(ts))
                 Label(date.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
         }
@@ -182,7 +182,7 @@ private struct DefaultArticlesSection: View {
                 }
 
                 Text("Pflichtartikel können nicht abgewählt werden.")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
         }
@@ -312,7 +312,7 @@ private struct TankEditorRow: View {
 
                 if vm.savedTanks.isEmpty {
                     Text("Keine gespeicherten Flaschen vorhanden.")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 } else {
                     Menu {
@@ -336,7 +336,7 @@ private struct TankEditorRow: View {
 
                     if !vm.items[index].serialNumber.isEmpty {
                         Text("Ausgewählt: \(vm.items[index].serialNumber)")
-                            .font(.caption)
+                            .font(.body)
                             .foregroundStyle(.secondary)
                     }
                 }
