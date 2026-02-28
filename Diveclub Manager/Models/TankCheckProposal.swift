@@ -35,3 +35,4 @@ struct TankCheckProposal: Codable, Identifiable {
 
     var displayTitle: String { (title?.isEmpty == false) ? title! : "TÜV Termin #\(id)" }
 }
+

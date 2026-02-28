@@ -24,7 +24,6 @@ struct ExpandableHTMLText: View {
             HTMLTextView(
                 html: html,
                 textStyle: textStyle,
-                lineLimit: isExpanded ? nil : collapsedLineLimit
             )
             .fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(.secondary)
