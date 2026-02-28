@@ -22,7 +22,7 @@ struct EquipmentReservationDetailView: View {
             } else if let err = vm.errorMessage {
                 ContentUnavailableView("Fehler", systemImage: "exclamationmark.triangle", description: Text(err))
             } else if let d = vm.detail {
-                detailView(d) // ✅ ReservationDetailDTO
+                detailView(d)
             } else {
                 ContentUnavailableView("Keine Daten", systemImage: "tray", description: Text("Reservierung nicht gefunden."))
             }
@@ -48,21 +48,12 @@ struct EquipmentReservationDetailView: View {
                         .background(s.color.opacity(0.15))
                         .clipShape(Capsule())
                 }
-
-                /*if let raw = d.reservationStatus {
-                    Text("raw: \(raw)")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }*/
             }
 
             Section("Infos") {
-                /*if let assetType = d.assetType, !assetType.isEmpty {
-                    Text("Typ: \(assetType)")
-                }*/
                 if let reserved = d.reservedAt {
                     if let returned = d.returnedAt {
-                        Text("Reserviert am: \(formatDateTime(reserved)) – Zuückgegeben am: \(formatDateTime(returned))")
+                        Text("Reserviert am: \(formatDateTime(reserved)) – Zurückgegeben am: \(formatDateTime(returned))")
                     } else {
                         Text("Reserviert am \(formatDateTime(reserved))")
                     }
@@ -79,7 +70,6 @@ struct EquipmentReservationDetailView: View {
                 let items = d.items ?? []
 
                 if !items.isEmpty {
-                    // ✅ explizites id: verhindert Binding-ForEach
                     ForEach(items, id: \.id) { it in
                         VStack(alignment: .leading, spacing: 6) {
 
@@ -103,47 +93,23 @@ struct EquipmentReservationDetailView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
 
-                                catalogDetailsView(itemType: it.itemType, itemId: itemId)
+                                // ✅ Klartext-Details aus Katalog + Options
+                                catalogDetailsView(itemType: it.itemType, itemId: itemId, item: it)
                             }
 
-                            if let t = it.types, !t.isEmpty {
-                                Text("Typ-Key: \(t)")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                            if let st = it.subType, !st.isEmpty {
-                                Text("Subtyp-Key: \(st)")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                            // ✅ Equipment-Typ/Subtyp Klartext (oder fallback auf Keys)
+                            if isEquipment(it.itemType) {
+                                if let line = vm.prettyTypeLineWithFallback(types: it.types, subType: it.subType) {
+                                    Text(line)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
 
                             if let n = it.notes, !n.isEmpty {
                                 Text(n)
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
-                            }
-
-                            // ✅ Regler-Modelle: Item → Reservation-Fallback
-                            let m1  = (it.regModel1st?.isEmpty == false) ? it.regModel1st : d.regModel1st
-                            let m2p = (it.regModel2ndPri?.isEmpty == false) ? it.regModel2ndPri : d.regModel2ndPri
-                            let m2s = (it.regModel2ndSec?.isEmpty == false) ? it.regModel2ndSec : d.regModel2ndSec
-
-                            if (m1?.isEmpty == false) || (m2p?.isEmpty == false) || (m2s?.isEmpty == false) {
-                                if let v = m1, !v.isEmpty {
-                                    Text("Modell 1. Stufe: \(v)")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let v = m2p, !v.isEmpty {
-                                    Text("Modell 2. Stufe (prim): \(v)")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let v = m2s, !v.isEmpty {
-                                    Text("Modell 2. Stufe (sec): \(v)")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -161,10 +127,10 @@ struct EquipmentReservationDetailView: View {
         }
     }
 
-    // MARK: - Catalog Details (über VM Lookups)
+    // MARK: - Catalog Details (über VM Lookups + Options)
 
     @ViewBuilder
-    private func catalogDetailsView(itemType: String?, itemId: Int) -> some View {
+    private func catalogDetailsView(itemType: String?, itemId: Int, item: ReservationDetailItemDTO) -> some View {
         let raw = (itemType ?? "").lowercased()
 
         if raw.contains("tank") {
@@ -180,6 +146,7 @@ struct EquipmentReservationDetailView: View {
                     }
                 }
             }
+
         } else if raw.contains("regulator") {
             if let r = vm.regsById[itemId] {
                 VStack(alignment: .leading, spacing: 4) {
@@ -187,11 +154,26 @@ struct EquipmentReservationDetailView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
-                    if let sub = r.displaySubtitle, !sub.isEmpty {
-                        Text(sub).font(.footnote).foregroundStyle(.secondary)
+                    // ✅ Klartext-Reglerdetails (Options: Hersteller + Modellnamen)
+                    let lines = vm.prettyRegulatorDetails(r)
+                    ForEach(lines, id: \.self) { line in
+                        Text(line).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                // Fallback: zumindest Modelle aus dem Item (wenn geliefert)
+                let m1 = item.regModel1st
+                let m2p = item.regModel2ndPri
+                let m2s = item.regModel2ndSec
+                if (m1?.isEmpty == false) || (m2p?.isEmpty == false) || (m2s?.isEmpty == false) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let v = m1, !v.isEmpty { Text("Modell 1. Stufe: \(v)").font(.footnote).foregroundStyle(.secondary) }
+                        if let v = m2p, !v.isEmpty { Text("Modell 2. Stufe (prim): \(v)").font(.footnote).foregroundStyle(.secondary) }
+                        if let v = m2s, !v.isEmpty { Text("Modell 2. Stufe (sec): \(v)").font(.footnote).foregroundStyle(.secondary) }
                     }
                 }
             }
+
         } else if raw.contains("equipment") {
             if let e = vm.eqById[itemId] {
                 VStack(alignment: .leading, spacing: 4) {
@@ -199,8 +181,10 @@ struct EquipmentReservationDetailView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
-                    if let sub = e.displaySubtitle, !sub.isEmpty {
-                        Text(sub).font(.footnote).foregroundStyle(.secondary)
+                    // ✅ Klartext-Equipmentdetails (Options: Typ/Subtyp/Hersteller/Größe)
+                    let lines = vm.prettyEquipmentDetails(e)
+                    ForEach(lines, id: \.self) { line in
+                        Text(line).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -208,6 +192,10 @@ struct EquipmentReservationDetailView: View {
     }
 
     // MARK: - Helpers
+
+    private func isEquipment(_ raw: String?) -> Bool {
+        (raw ?? "").lowercased().contains("equipment")
+    }
 
     private func itemTypeLabel(_ raw: String?) -> String {
         let s = (raw ?? "").lowercased()
