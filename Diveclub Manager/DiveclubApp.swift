@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct DiveclubAppApp: App {
+struct DiveclubApp: App {
 
     @StateObject private var auth = AuthManager.shared
     @StateObject private var settings = AppSettingsManager.shared

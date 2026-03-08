@@ -52,10 +52,10 @@ final class APIClient {
     /// Liest BaseURL aus UserDefaults direkt, damit APIClient nicht von @MainActor abhängt.
     /// Fallback: contao56.ddev.site
     var baseURL: URL {
-        let raw = (UserDefaults.standard.string(forKey: "baseURL") ?? "https://contao56.ddev.site")
+        let raw = (UserDefaults.standard.string(forKey: "baseURL") ?? "https://new.duc-darmstadt.de")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        return URL(string: raw) ?? URL(string: "https://contao56.ddev.site")!
+        return URL(string: raw) ?? URL(string: "https://new.duc-darmstadt.de")!
     }
 
     /// Timeout aus Settings (UserDefaults) – falls nicht gesetzt: 12s (fail fast)

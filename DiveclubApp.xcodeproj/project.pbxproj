@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -50,24 +50,18 @@
 /* Begin PBXFrameworksBuildPhase section */
 		7A0A6C102F3796B50039F86A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C1F2F3796B80039F86A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C292F3796B80039F86A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -105,14 +99,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				7A0A6C152F3796B50039F86A /* Diveclub Manager */,
 			);
 			name = Diveclub;
-			packageProductDependencies = (
-			);
 			productName = DiveclubApp;
 			productReference = 7A0A6C132F3796B50039F86A /* Diveclub.app */;
 			productType = "com.apple.product-type.application";
@@ -134,8 +124,6 @@
 				7A0A6C252F3796B80039F86A /* DiveclubAppTests */,
 			);
 			name = DiveclubAppTests;
-			packageProductDependencies = (
-			);
 			productName = DiveclubAppTests;
 			productReference = 7A0A6C222F3796B80039F86A /* DiveclubAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -157,8 +145,6 @@
 				7A0A6C2F2F3796B80039F86A /* DiveclubAppUITests */,
 			);
 			name = DiveclubAppUITests;
-			packageProductDependencies = (
-			);
 			productName = DiveclubAppUITests;
 			productReference = 7A0A6C2C2F3796B80039F86A /* DiveclubAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -188,15 +174,15 @@
 				};
 			};
 			buildConfigurationList = 7A0A6C0E2F3796B50039F86A /* Build configuration list for PBXProject "DiveclubApp" */;
-			developmentRegion = en;
+			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				de,
 			);
 			mainGroup = 7A0A6C0A2F3796B50039F86A;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 7A0A6C142F3796B50039F86A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -211,48 +197,36 @@
 /* Begin PBXResourcesBuildPhase section */
 		7A0A6C112F3796B50039F86A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C202F3796B80039F86A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C2A2F3796B80039F86A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7A0A6C0F2F3796B50039F86A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C1E2F3796B80039F86A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A0A6C282F3796B80039F86A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -270,7 +244,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		7A0A6C342F3796B80039F86A /* Debug */ = {
+		7A0A6C342F3796B80039F86A /* Debug configuration for PBXProject "DiveclubApp" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -334,7 +308,7 @@
 			};
 			name = Debug;
 		};
-		7A0A6C352F3796B80039F86A /* Release */ = {
+		7A0A6C352F3796B80039F86A /* Release configuration for PBXProject "DiveclubApp" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -391,7 +365,7 @@
 			};
 			name = Release;
 		};
-		7A0A6C372F3796B80039F86A /* Debug */ = {
+		7A0A6C372F3796B80039F86A /* Debug configuration for PBXNativeTarget "Diveclub" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -401,17 +375,21 @@
 				DEVELOPMENT_TEAM = N8SZ5ELCEV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Diveclub Manager";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = LaunchScreen;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Diversworld.DiveclubApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -424,7 +402,7 @@
 			};
 			name = Debug;
 		};
-		7A0A6C382F3796B80039F86A /* Release */ = {
+		7A0A6C382F3796B80039F86A /* Release configuration for PBXNativeTarget "Diveclub" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -434,17 +412,21 @@
 				DEVELOPMENT_TEAM = N8SZ5ELCEV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Diveclub Manager";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.news";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIMainStoryboardFile = LaunchScreen;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Diversworld.DiveclubApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -457,7 +439,7 @@
 			};
 			name = Release;
 		};
-		7A0A6C3A2F3796B80039F86A /* Debug */ = {
+		7A0A6C3A2F3796B80039F86A /* Debug configuration for PBXNativeTarget "DiveclubAppTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -479,7 +461,7 @@
 			};
 			name = Debug;
 		};
-		7A0A6C3B2F3796B80039F86A /* Release */ = {
+		7A0A6C3B2F3796B80039F86A /* Release configuration for PBXNativeTarget "DiveclubAppTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -501,7 +483,7 @@
 			};
 			name = Release;
 		};
-		7A0A6C3D2F3796B80039F86A /* Debug */ = {
+		7A0A6C3D2F3796B80039F86A /* Debug configuration for PBXNativeTarget "DiveclubAppUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -521,7 +503,7 @@
 			};
 			name = Debug;
 		};
-		7A0A6C3E2F3796B80039F86A /* Release */ = {
+		7A0A6C3E2F3796B80039F86A /* Release configuration for PBXNativeTarget "DiveclubAppUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -547,37 +529,33 @@
 		7A0A6C0E2F3796B50039F86A /* Build configuration list for PBXProject "DiveclubApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7A0A6C342F3796B80039F86A /* Debug */,
-				7A0A6C352F3796B80039F86A /* Release */,
+				7A0A6C342F3796B80039F86A /* Debug configuration for PBXProject "DiveclubApp" */,
+				7A0A6C352F3796B80039F86A /* Release configuration for PBXProject "DiveclubApp" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		7A0A6C362F3796B80039F86A /* Build configuration list for PBXNativeTarget "Diveclub" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7A0A6C372F3796B80039F86A /* Debug */,
-				7A0A6C382F3796B80039F86A /* Release */,
+				7A0A6C372F3796B80039F86A /* Debug configuration for PBXNativeTarget "Diveclub" */,
+				7A0A6C382F3796B80039F86A /* Release configuration for PBXNativeTarget "Diveclub" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		7A0A6C392F3796B80039F86A /* Build configuration list for PBXNativeTarget "DiveclubAppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7A0A6C3A2F3796B80039F86A /* Debug */,
-				7A0A6C3B2F3796B80039F86A /* Release */,
+				7A0A6C3A2F3796B80039F86A /* Debug configuration for PBXNativeTarget "DiveclubAppTests" */,
+				7A0A6C3B2F3796B80039F86A /* Release configuration for PBXNativeTarget "DiveclubAppTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		7A0A6C3C2F3796B80039F86A /* Build configuration list for PBXNativeTarget "DiveclubAppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7A0A6C3D2F3796B80039F86A /* Debug */,
-				7A0A6C3E2F3796B80039F86A /* Release */,
+				7A0A6C3D2F3796B80039F86A /* Debug configuration for PBXNativeTarget "DiveclubAppUITests" */,
+				7A0A6C3E2F3796B80039F86A /* Release configuration for PBXNativeTarget "DiveclubAppUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

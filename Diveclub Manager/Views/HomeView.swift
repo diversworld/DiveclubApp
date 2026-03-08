@@ -160,17 +160,20 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .refreshable {
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-
                     await vm.load()
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-                    Task { @MainActor in
-                        await Task.yield()
-                        withAnimation(.easeInOut) { showRefreshedBanner = true }
-                        try? await Task.sleep(nanoseconds: 1_200_000_000)
-                        withAnimation(.easeInOut) { showRefreshedBanner = false }
+                    await MainActor.run {
+                        withAnimation(.easeInOut) {
+                            showRefreshedBanner = true
+                        }
+                    }
+
+                    try? await Task.sleep(nanoseconds: 1_200_000_000)
+
+                    await MainActor.run {
+                        withAnimation(.easeInOut) {
+                            showRefreshedBanner = false
+                        }
                     }
                 }
                 // ✅ Fußzeile fest “angedockt”, wie TabBar
